@@ -44,6 +44,8 @@ pub fn cpuid(input: &Registers, output: &mut Registers) {
     }
 }
 
+// TODO: The input ebx/edx registers will always be zero. We should figure out a nice way to have
+// only input eax/ecx and output eax/ebx/ecx/edx.
 pub struct CPUID {
     pub input: Registers,
     pub output: Registers,
