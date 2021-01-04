@@ -8,7 +8,12 @@ etc. Porting my CPUID tooling to Rust feels a lot more achievable.
 ## Current state
 As of this writing, this is only a standalone tool called "dump" which will
 print out all known CPUID leaves on each CPU (including the weird indexed
-leaves).
+leaves). It currently makes no effort to decode the raw data -- it just
+enumerates and prints it as-is.
+
+Dumps from the "dump" tool are identical in output format to my [CPUID tool
+written in C](https://github.com/tycho/cpuid), and can be parsed by using that
+tool (see the `-f` argument on there).
 
 ## Future work
 * Create a library and maintainable API for calling CPUID, most likely with tiered
