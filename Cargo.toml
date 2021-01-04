@@ -9,5 +9,6 @@ lto = "thin"
 codegen-units = 1
 
 [dependencies]
-num_cpus = "1.13.0"
-affinity = "0.1.1"
+clap = "^2"
+num_cpus = "^1"
+affinity = "^0"
