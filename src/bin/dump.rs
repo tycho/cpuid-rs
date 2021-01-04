@@ -2,11 +2,7 @@ extern crate affinity;
 extern crate cpuid;
 extern crate num_cpus;
 
-use cpuid::cpuid::{walk, CPUID};
-
-fn print_cpuid(id: &CPUID) {
-    println!("{}", id);
-}
+use cpuid::cpuid::walk;
 
 fn main() {
     let cpus = num_cpus::get();
@@ -15,7 +11,7 @@ fn main() {
         let mask = vec![cpu];
         affinity::set_thread_affinity(mask).unwrap();
         for entry in walk().iter() {
-            print_cpuid(&entry);
+            println!("{}", entry);
         }
     }
 }
