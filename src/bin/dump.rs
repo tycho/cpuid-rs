@@ -5,10 +5,9 @@ extern crate num_cpus;
 use cpuid::cpuid::{Registers,cpuid};
 
 fn print_regs(input: &Registers, output: &Registers) {
-    let ascii = output.ascii();
     println!(
         "CPUID {:08x}:{:02x} = {:08x} {:08x} {:08x} {:08x} | {}",
-        input.eax, input.ecx, output.eax, output.ebx, output.ecx, output.edx, ascii
+        input.eax, input.ecx, output.eax, output.ebx, output.ecx, output.edx, output.ascii()
     );
 }
 
