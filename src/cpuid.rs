@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub struct Registers {
     pub eax: u32,
     pub ebx: u32,
@@ -32,19 +34,51 @@ impl Registers {
     }
 }
 
-pub fn cpuid(input: &Registers) -> Registers {
-    let mut eax: u32;
-    let mut ebx: u32;
-    let mut ecx: u32;
-    let mut edx: u32;
-
+pub fn cpuid(input: &Registers, output: &mut Registers) {
     unsafe {
         asm!("cpuid",
-            inout("eax") input.eax => eax,
-            lateout("ebx") ebx,
-            inout("ecx") input.ecx => ecx,
-            lateout("edx") edx)
+            inout("eax") input.eax => output.eax,
+            lateout("ebx") output.ebx,
+            inout("ecx") input.ecx => output.ecx,
+            lateout("edx") output.edx)
     }
+}
 
-    Registers::new(eax, ebx, ecx, edx)
+pub struct CPUID {
+    pub input: Registers,
+    pub output: Registers,
+}
+
+impl CPUID {
+    pub fn new() -> CPUID {
+        CPUID {
+            input: Registers::new(0, 0, 0, 0),
+            output: Registers::new(0, 0, 0, 0),
+        }
+    }
+    pub fn invoke(eax: u32, ecx: u32) -> CPUID {
+        let input = Registers::new(eax, 0, ecx, 0);
+        let mut output = Registers::new(0, 0, 0, 0);
+        cpuid(&input, &mut output);
+        CPUID {
+            input: input,
+            output: output,
+        }
+    }
+    pub fn call(&mut self) {
+        cpuid(&self.input, &mut self.output);
+    }
+    pub fn next_subleaf(&mut self) {
+        self.input.ecx += 1;
+        cpuid(&self.input, &mut self.output);
+    }
+}
+
+impl fmt::Display for CPUID {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+            "CPUID {:08x}:{:02x} = {:08x} {:08x} {:08x} {:08x} | {}",
+            self.input.eax, self.input.ecx, self.output.eax, self.output.ebx, self.output.ecx, self.output.edx, self.output.ascii()
+        )
+    }
 }

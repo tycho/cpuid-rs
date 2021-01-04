@@ -2,187 +2,167 @@ extern crate affinity;
 extern crate cpuid;
 extern crate num_cpus;
 
-use cpuid::cpuid::{Registers,cpuid};
+use cpuid::cpuid::CPUID;
 
-fn print_regs(input: &Registers, output: &Registers) {
-    println!(
-        "CPUID {:08x}:{:02x} = {:08x} {:08x} {:08x} {:08x} | {}",
-        input.eax, input.ecx, output.eax, output.ebx, output.ecx, output.edx, output.ascii()
-    );
+fn print_cpuid(id: &CPUID) {
+    println!("{}", id);
 }
 
 fn call_leaf(leaf: u32, subleaf: u32) {
-    let input = Registers::new(leaf, 0, subleaf, 0);
-    let output = cpuid(&input);
-    print_regs(&input, &output);
+    let id = CPUID::invoke(leaf, subleaf);
+    print_cpuid(&id)
 }
 
 fn call_leaf_04() {
-    let mut input = Registers::new(0x0000_0004, 0, 0, 0);
+    let mut state = CPUID::invoke(0x0000_0004, 0);
     loop {
-        let output = cpuid(&input);
-        print_regs(&input, &output);
-        if output.eax & 0xF == 0 {
+        print_cpuid(&state);
+        if state.output.eax & 0xF == 0 {
             break;
         }
-        input.ecx += 1;
+        state.next_subleaf();
     }
 }
 
 fn call_leaf_x2apic(leaf: u32) {
-    let mut input = Registers::new(leaf, 0, 0, 0);
+    let mut state = CPUID::invoke(leaf, 0);
     loop {
-        let output = cpuid(&input);
-        if input.ecx > 0 && !(output.eax != 0 || output.ebx != 0) {
+        if state.input.ecx > 0 && !(state.output.eax != 0 || state.output.ebx != 0) {
             break;
         }
-        print_regs(&input, &output);
-        input.ecx += 1;
+        print_cpuid(&state);
+        state.next_subleaf();
     }
 }
 
 fn call_leaf_0d() {
-    let mut input = Registers::new(0x0000_000D, 0, 0, 0);
+    let mut state = CPUID::invoke(0x0000_000D, 0);
     loop {
-        let output = cpuid(&input);
-        if input.ecx > 0
-            && !(output.eax != 0 || output.ebx != 0 || output.ecx != 0 || output.edx != 0)
+        if state.input.ecx > 0
+            && !(state.output.eax != 0 || state.output.ebx != 0 || state.output.ecx != 0 || state.output.edx != 0)
         {
             break;
         }
-        print_regs(&input, &output);
-        if input.ecx == 0 && output.eax == 0 {
+        print_cpuid(&state);
+        if state.input.ecx == 0 && state.output.eax == 0 {
             break;
         }
-        input.ecx += 1;
+        state.next_subleaf();
     }
 }
 
 fn call_leaf_0f() {
-    let mut input = Registers::new(0x0000_000F, 0, 0, 0);
-    let output = cpuid(&input);
+    let mut state = CPUID::invoke(0x0000_000F, 0);
     let mut max_ecx = 0;
-    if (output.edx & 0x2) != 0 {
+    if (state.output.edx & 0x2) != 0 {
         max_ecx = 1
     }
     loop {
-        let output = cpuid(&input);
-        print_regs(&input, &output);
-        input.ecx += 1;
-        if input.ecx > max_ecx {
+        print_cpuid(&state);
+        state.next_subleaf();
+        if state.input.ecx > max_ecx {
             break;
         }
     }
 }
 
 fn call_leaf_10() {
-    let mut input = Registers::new(0x0000_0010, 0, 0, 0);
-    let output = cpuid(&input);
+    let mut state = CPUID::invoke(0x0000_0010, 0);
     let mut max_ecx = 0;
-    if (output.ebx & 0x2) != 0 {
+    if (state.output.ebx & 0x2) != 0 {
         max_ecx = 1
     }
     loop {
-        let output = cpuid(&input);
-        print_regs(&input, &output);
-        input.ecx += 1;
-        if input.ecx > max_ecx {
+        print_cpuid(&state);
+        state.next_subleaf();
+        if state.input.ecx > max_ecx {
             break;
         }
     }
 }
 
 fn call_leaf_12() {
-    let mut input = Registers::new(0x0000_0007, 0, 0, 0);
-    let output = cpuid(&input);
-    let sgx_supported = (output.ebx & 0x4) != 0;
-    input.eax = 0x0000_0012;
+    let feature_check = CPUID::invoke(0x0000_0007, 0);
+    let sgx_supported = (feature_check.output.ebx & 0x4) != 0;
+    let mut state = CPUID::invoke(0x0000_0012, 0);
     loop {
-        let output = cpuid(&input);
-        if input.ecx > 1 && (output.eax & 0xf) == 0 {
+        if state.input.ecx > 1 && (state.output.eax & 0xf) == 0 {
             break;
         }
-        print_regs(&input, &output);
+        print_cpuid(&state);
         if !sgx_supported {
             break;
         }
-        input.ecx += 1;
+        state.next_subleaf();
     }
 }
 
 fn call_leaf_1b() {
-    let mut input = Registers::new(0x0000_0007, 0, 0, 0);
-    let output = cpuid(&input);
-    let pconfig_supported = (output.edx & 0x0004_0000) != 0;
-    input.eax = 0x0000_001b;
+    let feature_check = CPUID::invoke(0x0000_0007, 0);
+    let pconfig_supported = (feature_check.output.edx & 0x0004_0000) != 0;
+    let mut state = CPUID::invoke(0x0000_001B, 0);
     loop {
-        let output = cpuid(&input);
-        if input.ecx > 0 && (output.eax & 0xfff) == 0 {
+        if state.input.ecx > 0 && (state.output.eax & 0xfff) == 0 {
             break;
         }
-        print_regs(&input, &output);
+        print_cpuid(&state);
         if !pconfig_supported {
             break;
         }
-        input.ecx += 1;
+        state.next_subleaf();
     }
 }
 
 fn call_leaf_max_ecx(leaf: u32, max_subleaf: u32) {
-    let mut input = Registers::new(leaf, 0, 0, 0);
+    let mut state = CPUID::invoke(leaf, 0);
     loop {
-        let output = cpuid(&input);
-        print_regs(&input, &output);
-        input.ecx += 1;
-        if input.ecx > max_subleaf {
+        print_cpuid(&state);
+        state.next_subleaf();
+        if state.input.ecx > max_subleaf {
             break;
         }
     }
 }
 
 fn call_leaf_ext_1d() {
-    let mut input = Registers::new(0x8000_0001, 0, 0, 0);
-    let output = cpuid(&input);
-    let ext_topology_supported = (output.ecx & 0x0040_0000) != 0;
-    input.eax = 0x8000_001d;
+    let feature_check = CPUID::invoke(0x8000_0001, 0);
+    let ext_topology_supported = (feature_check.output.ecx & 0x0040_0000) != 0;
+    let mut state = CPUID::invoke(0x8000_001D, 0);
     loop {
-        let output = cpuid(&input);
-        if input.ecx > 0 && output.eax == 0 {
+        if state.input.ecx > 0 && state.output.eax == 0 {
             break;
         }
-        print_regs(&input, &output);
+        print_cpuid(&state);
         if !ext_topology_supported {
             break;
         }
-        input.ecx += 1;
+        state.next_subleaf();
     }
 }
 
 fn call_leaf_indexed(leaf: u32) {
-    let mut input = Registers::new(leaf, 0, 0, 0);
-    let output = cpuid(&input);
-    let max_ecx = output.eax;
+    let mut state = CPUID::invoke(leaf, 0);
+    let max_ecx = state.output.eax;
     loop {
-        print_regs(&input, &output);
-        input.ecx += 1;
-        if input.ecx > max_ecx {
+        print_cpuid(&state);
+        state.next_subleaf();
+        if state.input.ecx > max_ecx {
             break;
         }
     }
 }
 
 fn enumerate_leaves(base: u32) {
-    let input = Registers::new(base, 0, 0, 0);
-    let output = cpuid(&input);
+    let state = CPUID::invoke(base, 0);
 
     // All valid bases use eax to indicate the maximum supported leaf within that range.
-    if output.eax < base || output.eax > base + 0xFFFF {
+    if state.output.eax < base || state.output.eax > base + 0xFFFF {
         // Even if this base isn't valid, print it so that our dump is comprehensive.
-        print_regs(&input, &output);
+        print_cpuid(&state);
         return;
     }
 
-    for leaf in input.eax..(output.eax + 1) {
+    for leaf in state.input.eax..(state.output.eax + 1) {
         // Some leaves are indexed (i.e. passing different values for ecx will generate different
         // results). Unfortunately how they're indexed varies significantly. We need to call
         // a handler for each of the special leaves so they can be dumped fully.
