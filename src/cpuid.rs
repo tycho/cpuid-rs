@@ -296,6 +296,9 @@ fn walk_bases(out: &mut Vec<CPUID>) {
     }
 }
 
+/// Walk all known CPUID leaves on the current processor. Note that you should
+/// set your process or thread affinity to prevent the OS from moving the
+/// process/thread around causing you to query other CPUs inadvertently.
 pub fn walk() -> Vec<CPUID> {
     let mut out: Vec<CPUID> = vec![];
     walk_bases(&mut out);
