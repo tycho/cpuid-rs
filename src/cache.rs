@@ -236,12 +236,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
                 _ => panic!("Invalid register name!"),
             };
 
-            let regbytes = match register {
-                RegisterName::EBX => raw.output.ebx.to_le_bytes(),
-                RegisterName::EAX => raw.output.eax.to_le_bytes(),
-                _ => panic!("Invalid register name!"),
-            };
-
+            let regbytes = raw.output.register(register).to_le_bytes();
             let tlb = L1TlbDesc::from_bytes(regbytes);
 
             if tlb.dtlb_entries() > 0 {
@@ -286,12 +281,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
                 _ => panic!("Invalid register name!"),
             };
 
-            let regbytes = match register {
-                RegisterName::EBX => raw.output.ebx.to_le_bytes(),
-                RegisterName::EAX => raw.output.eax.to_le_bytes(),
-                _ => panic!("Invalid register name!"),
-            };
-
+            let regbytes = raw.output.register(register).to_le_bytes();
             let tlb = L2TlbDesc::from_bytes(regbytes);
 
             if tlb.dtlb_entries() > 0 {

@@ -37,6 +37,15 @@ impl Registers {
         }
     }
 
+    pub fn register(&self, name: RegisterName) -> u32 {
+        match name {
+            RegisterName::EAX => self.eax,
+            RegisterName::EBX => self.ebx,
+            RegisterName::ECX => self.ecx,
+            RegisterName::EDX => self.edx,
+        }
+    }
+
     /// Try to create an ASCII representation of the bytes in the registers. Uses '.' as
     /// a placeholder for invalid ASCII values.
     pub fn ascii(&self) -> String {
