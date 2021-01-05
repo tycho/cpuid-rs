@@ -1,5 +1,10 @@
-all:
+debug:
 	cargo build
+
+release:
+	cargo build --release
+
+all: debug release
 
 clean:
 	cargo clean
