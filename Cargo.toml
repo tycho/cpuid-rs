@@ -4,6 +4,10 @@ version = "0.0.0"
 authors = ["Steven Noonan <steven@uplinklabs.net>"]
 edition = "2018"
 
+[features]
+default = ["legacy-cache-descriptors"]
+legacy-cache-descriptors = []
+
 [profile.release]
 opt-level = "s"
 lto = "thin"

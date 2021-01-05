@@ -5,7 +5,9 @@ use std::cmp::Ordering;
 use std::fmt;
 use textwrap::indent;
 
+#[cfg(feature="legacy-cache-descriptors")]
 use crate::cache_descriptors::lookup_cache_descriptor;
+
 use crate::cpuid::{Processor, RegisterName, System};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -780,6 +782,7 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
     retval
 }
 
+#[cfg(feature="legacy-cache-descriptors")]
 fn walk_intel_legacy_cache(
     _system: &System,
     cpu: &Processor,
@@ -867,26 +870,32 @@ fn walk_intel_legacy_cache(
 
 fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dcp(system, cpu, out) {
-        let cache_types: Vec<CacheType> = vec![
-            CacheType::Code,
-            CacheType::Data,
-            CacheType::Unified,
-            CacheType::Trace,
-        ];
-        walk_intel_legacy_cache(system, cpu, out, &cache_types);
+        #[cfg(feature="legacy-cache-descriptors")]
+        {
+            let cache_types: Vec<CacheType> = vec![
+                CacheType::Code,
+                CacheType::Data,
+                CacheType::Unified,
+                CacheType::Trace,
+            ];
+            walk_intel_legacy_cache(system, cpu, out, &cache_types);
+        }
     }
 }
 
 fn walk_intel_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dat(system, cpu, out) {
-        let cache_types: Vec<CacheType> = vec![
-            CacheType::CodeTLB,
-            CacheType::DataTLB,
-            CacheType::SharedTLB,
-            CacheType::LoadOnlyTLB,
-            CacheType::StoreOnlyTLB,
-        ];
-        walk_intel_legacy_cache(system, cpu, out, &cache_types);
+        #[cfg(feature="legacy-cache-descriptors")]
+        {
+            let cache_types: Vec<CacheType> = vec![
+                CacheType::CodeTLB,
+                CacheType::DataTLB,
+                CacheType::SharedTLB,
+                CacheType::LoadOnlyTLB,
+                CacheType::StoreOnlyTLB,
+            ];
+            walk_intel_legacy_cache(system, cpu, out, &cache_types);
+        }
     }
 }
 
