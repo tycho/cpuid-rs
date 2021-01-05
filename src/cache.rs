@@ -341,7 +341,8 @@ fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
         level: B3,
         self_initializing: bool,
         fully_associative: bool,
-        #[skip] __: B4,
+        #[skip]
+        __: B4,
         max_threads_sharing: B12,
         apics_reserved: B6,
     }
@@ -366,7 +367,8 @@ fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
         wbinvd: bool,
         inclusive: bool,
         complex_indexing: bool,
-        #[skip] __: B29,
+        #[skip]
+        __: B29,
     }
 
     let mut subleaf: u32 = 0;
@@ -377,7 +379,7 @@ fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
         let edx = EdxCache::from_bytes(raw.output.edx.to_le_bytes());
 
         if eax.level() == 0 {
-            break
+            break;
         }
 
         let mut associativity_type = CacheAssociativityType::NWay;
@@ -388,42 +390,44 @@ fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
             associativity_type = CacheAssociativityType::DirectMapped;
         }
 
-        out.push(
-            CacheDescription {
-                size: ((ebx.associativity() as u32 + 1) * (ebx.partitions() as u32 + 1) * (ebx.linesize() as u32 + 1) * (ecx.sets() as u32 + 1)) / 1024,
+        out.push(CacheDescription {
+            size: ((ebx.associativity() as u32 + 1)
+                * (ebx.partitions() as u32 + 1)
+                * (ebx.linesize() as u32 + 1)
+                * (ecx.sets() as u32 + 1))
+                / 1024,
 
-                level: match eax.level() {
-                    1 => CacheLevel::L1,
-                    2 => CacheLevel::L2,
-                    3 => CacheLevel::L3,
-                    _ => CacheLevel::default(),
-                },
+            level: match eax.level() {
+                1 => CacheLevel::L1,
+                2 => CacheLevel::L2,
+                3 => CacheLevel::L3,
+                _ => CacheLevel::default(),
+            },
 
-                cachetype: match eax.cachetype() {
-                    1 => CacheType::Data,
-                    2 => CacheType::Code,
-                    3 => CacheType::Unified,
-                    _ => CacheType::Unknown,
-                },
+            cachetype: match eax.cachetype() {
+                1 => CacheType::Data,
+                2 => CacheType::Code,
+                3 => CacheType::Unified,
+                _ => CacheType::Unknown,
+            },
 
-                associativity: CacheAssociativity {
-                    mapping: associativity_type,
-                    ways: ebx.associativity() + 1,
-                },
+            associativity: CacheAssociativity {
+                mapping: associativity_type,
+                ways: ebx.associativity() + 1,
+            },
 
-                linesize: ebx.linesize() + 1,
-                partitions: ebx.partitions() + 1,
-                max_threads_sharing: eax.max_threads_sharing() + 1,
+            linesize: ebx.linesize() + 1,
+            partitions: ebx.partitions() + 1,
+            max_threads_sharing: eax.max_threads_sharing() + 1,
 
-                flags: CacheFlags::new()
-                    .with_self_initializing(eax.self_initializing())
-                    .with_inclusive(edx.inclusive())
-                    .with_complex_indexing(edx.complex_indexing())
-                    .with_wbinvd_not_inclusive(edx.wbinvd()),
+            flags: CacheFlags::new()
+                .with_self_initializing(eax.self_initializing())
+                .with_inclusive(edx.inclusive())
+                .with_complex_indexing(edx.complex_indexing())
+                .with_wbinvd_not_inclusive(edx.wbinvd()),
 
-                ..Default::default()
-            }
-        );
+            ..Default::default()
+        });
 
         subleaf += 1;
     }

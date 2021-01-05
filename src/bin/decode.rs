@@ -1,7 +1,7 @@
 use clap::{value_t, App, Arg};
 
-use cpuid::cpuid::{walk as cpuid_walk, snapshots_from_file, CPUIDSnapshot};
 use cpuid::cache::walk as cache_walk;
+use cpuid::cpuid::{snapshots_from_file, walk as cpuid_walk, CPUIDSnapshot};
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -47,7 +47,8 @@ fn main() {
                 .value_name("INDEX")
                 .help("Which CPU to decode CPUID information from")
                 .takes_value(true),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("file")
                 .short("f")
                 .long("file")
@@ -79,11 +80,10 @@ fn main() {
         cpu_end = cpu_index as u32;
     }
 
-    let snapshots: Vec<(u32, CPUIDSnapshot)> =
-        match matches.value_of("file") {
-            Some(filename) => collect_file(cpu_start, cpu_end, filename),
-            _ => collect_local(cpu_start, cpu_end),
-        };
+    let snapshots: Vec<(u32, CPUIDSnapshot)> = match matches.value_of("file") {
+        Some(filename) => collect_file(cpu_start, cpu_end, filename),
+        _ => collect_local(cpu_start, cpu_end),
+    };
 
     for (cpu, snapshot) in snapshots.iter() {
         println!("CPU {}:", cpu);
