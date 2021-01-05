@@ -1,11 +1,6 @@
-extern crate affinity;
-extern crate clap;
-extern crate cpuid;
-extern crate num_cpus;
-
 use clap::{value_t, App, Arg};
 
-use cpuid::cpuid::walk;
+use cpuid::cpuid::walk as cpuid_walk;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -54,7 +49,8 @@ fn main() {
         // isn't any thread affinity API there.
         affinity::set_thread_affinity(mask).unwrap();
 
-        for entry in walk().iter() {
+        let snapshot = cpuid_walk();
+        for entry in snapshot.leaves.iter() {
             println!("{}", entry);
         }
     }

@@ -2,6 +2,7 @@
 name = "cpuid"
 version = "0.0.0"
 authors = ["Steven Noonan <steven@uplinklabs.net>"]
+edition = "2018"
 
 [profile.release]
 opt-level = "s"
@@ -9,6 +10,7 @@ lto = "thin"
 codegen-units = 1
 
 [dependencies]
+modular-bitfield = "^0"
 clap = "^2"
 num_cpus = "^1"
 affinity = "^0"

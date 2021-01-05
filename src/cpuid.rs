@@ -1,11 +1,30 @@
 use std::fmt;
 
 #[derive(Debug, Clone)]
+pub struct LeafID {
+    pub eax: u32,
+    pub ecx: u32,
+}
+
+#[derive(Debug, Clone)]
 pub struct Registers {
     pub eax: u32,
     pub ebx: u32,
     pub ecx: u32,
     pub edx: u32,
+}
+
+pub enum RegisterName {
+    EAX,
+    EBX,
+    ECX,
+    EDX,
+}
+
+impl LeafID {
+    pub fn new(eax: u32, ecx: u32) -> LeafID {
+        LeafID { eax: eax, ecx: ecx }
+    }
 }
 
 impl Registers {
@@ -35,7 +54,7 @@ impl Registers {
     }
 }
 
-pub fn cpuid(input: &Registers, output: &mut Registers) {
+pub fn cpuid(input: &LeafID, output: &mut Registers) {
     unsafe {
         asm!("cpuid",
             inout("eax") input.eax => output.eax,
@@ -45,23 +64,21 @@ pub fn cpuid(input: &Registers, output: &mut Registers) {
     }
 }
 
-// TODO: The input ebx/edx registers will always be zero. We should figure out a nice way to have
-// only input eax/ecx and output eax/ebx/ecx/edx.
 #[derive(Debug, Clone)]
 pub struct CPUID {
-    pub input: Registers,
+    pub input: LeafID,
     pub output: Registers,
 }
 
 impl CPUID {
     pub fn new() -> CPUID {
         CPUID {
-            input: Registers::new(0, 0, 0, 0),
+            input: LeafID::new(0, 0),
             output: Registers::new(0, 0, 0, 0),
         }
     }
     pub fn invoke(eax: u32, ecx: u32) -> CPUID {
-        let input = Registers::new(eax, 0, ecx, 0);
+        let input = LeafID::new(eax, ecx);
         let mut output = Registers::new(0, 0, 0, 0);
         cpuid(&input, &mut output);
         CPUID {
@@ -75,6 +92,57 @@ impl CPUID {
     pub fn next_subleaf(&mut self) {
         self.input.ecx += 1;
         cpuid(&self.input, &mut self.output);
+    }
+}
+
+#[derive(Debug)]
+pub struct CPUIDSnapshot {
+    pub leaves: Vec<CPUID>,
+}
+
+impl CPUIDSnapshot {
+    pub fn new() -> CPUIDSnapshot {
+        CPUIDSnapshot { leaves: vec![] }
+    }
+
+    pub fn get_subleaf(&self, leaf: u32, subleaf: u32) -> Option<&CPUID> {
+        for result in self.leaves.iter() {
+            if result.input.eax == leaf && result.input.ecx == subleaf {
+                return Some(&result);
+            }
+        }
+        None
+    }
+
+    pub fn get(&self, leaf: u32) -> Vec<&CPUID> {
+        let mut out: Vec<&CPUID> = vec![];
+        for result in self.leaves.iter() {
+            if result.input.eax == leaf {
+                out.push(&result);
+            }
+        }
+        out
+    }
+
+    pub fn has_feature_bit(
+        &self,
+        leaf: u32,
+        subleaf: u32,
+        register: RegisterName,
+        bit: u32,
+    ) -> bool {
+        match self.get_subleaf(leaf, subleaf) {
+            None => false,
+            Some(leafdata) => {
+                let bits = match register {
+                    RegisterName::EAX => leafdata.output.eax,
+                    RegisterName::EBX => leafdata.output.ebx,
+                    RegisterName::ECX => leafdata.output.ecx,
+                    RegisterName::EDX => leafdata.output.edx,
+                };
+                bits & (1 << bit) != 0
+            }
+        }
     }
 }
 
@@ -299,8 +367,8 @@ fn walk_bases(out: &mut Vec<CPUID>) {
 /// Walk all known CPUID leaves on the current processor. Note that you should
 /// set your process or thread affinity to prevent the OS from moving the
 /// process/thread around causing you to query other CPUs inadvertently.
-pub fn walk() -> Vec<CPUID> {
-    let mut out: Vec<CPUID> = vec![];
-    walk_bases(&mut out);
+pub fn walk() -> CPUIDSnapshot {
+    let mut out: CPUIDSnapshot = CPUIDSnapshot::new();
+    walk_bases(&mut out.leaves);
     out
 }
