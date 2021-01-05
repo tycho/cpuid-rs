@@ -1,38 +1,8 @@
 use clap::{value_t, App, Arg};
 
-use cpuid::cpuid::{snapshots_from_file, walk as cpuid_walk, CPUIDSnapshot};
+use cpuid::cpuid::System;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
-fn collect_file(cpu_start: u32, cpu_end: u32, filename: &str) -> Vec<(u32, CPUIDSnapshot)> {
-    let snapshot_result = snapshots_from_file(filename);
-    let mut collected: Vec<(u32, CPUIDSnapshot)> = vec![];
-    if let Ok(snapshots) = snapshot_result {
-        for (idx, snapshot) in snapshots.iter() {
-            if *idx >= cpu_start as u32 && *idx <= cpu_end as u32 {
-                collected.push((*idx, snapshot.clone()))
-            }
-        }
-    }
-    collected
-}
-
-fn collect_local(cpu_start: u32, cpu_end: u32) -> Vec<(u32, CPUIDSnapshot)> {
-    let mut collected: Vec<(u32, CPUIDSnapshot)> = vec![];
-
-    for cpu in cpu_start..(cpu_end + 1) {
-        let mask = vec![cpu as usize];
-
-        // TODO: This can fail, and we should be noisy about it when it does.
-        // Though if we're on macOS we can't do anything about it since there
-        // isn't any thread affinity API there.
-        affinity::set_thread_affinity(mask).unwrap();
-
-        collected.push((cpu, cpuid_walk()));
-    }
-
-    collected
-}
 
 fn main() {
     let matches = App::new("CPUID dump tool")
@@ -79,12 +49,15 @@ fn main() {
         cpu_end = cpu_index as u32;
     }
 
-    let snapshots: Vec<(u32, CPUIDSnapshot)> = match matches.value_of("file") {
-        Some(filename) => collect_file(cpu_start, cpu_end, filename),
-        _ => collect_local(cpu_start, cpu_end),
+    let system = match matches.value_of("file") {
+        Some(filename) => System::from_file(filename).unwrap(),
+        _ => System::from_local(),
     };
 
-    for (cpu, snapshot) in snapshots.iter() {
+    for (cpu, snapshot) in system.cpus.iter() {
+        if *cpu < cpu_start || *cpu > cpu_end {
+            continue;
+        }
         println!("CPU {}:", cpu);
         for entry in snapshot.leaves.iter() {
             println!("{}", entry);

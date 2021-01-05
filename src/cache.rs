@@ -1,8 +1,10 @@
 #![allow(dead_code, unused_attributes)]
 
 use modular_bitfield::prelude::*;
+use std::fmt;
+use textwrap::indent;
 
-use crate::cpuid::{CPUIDSnapshot, RegisterName};
+use crate::cpuid::{Processor, RegisterName, System};
 
 #[derive(Debug)]
 #[repr(u8)]
@@ -18,9 +20,31 @@ pub enum CacheType {
     LoadOnlyTLB,
     StoreOnlyTLB,
 }
+
 impl Default for CacheType {
     fn default() -> CacheType {
         CacheType::Unknown
+    }
+}
+
+impl fmt::Display for CacheType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                CacheType::Unknown => "unknown cache",
+                CacheType::Data => "data cache",
+                CacheType::Code => "code cache",
+                CacheType::Unified => "unified cache",
+                CacheType::Trace => "trace cache",
+                CacheType::DataTLB => "data TLB",
+                CacheType::CodeTLB => "code TLB",
+                CacheType::SharedTLB => "shared TLB",
+                CacheType::LoadOnlyTLB => "load-only TLB",
+                CacheType::StoreOnlyTLB => "store-only TLB",
+            }
+        )
     }
 }
 
@@ -34,6 +58,7 @@ pub enum CacheLevel {
     L3,
     L4,
 }
+
 impl Default for CacheLevel {
     fn default() -> CacheLevel {
         CacheLevel::Unknown
@@ -74,6 +99,17 @@ impl CacheAssociativity {
     }
 }
 
+impl fmt::Display for CacheAssociativity {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.mapping {
+            CacheAssociativityType::Unknown => write!(f, "unknown associativity"),
+            CacheAssociativityType::DirectMapped => write!(f, "direct-mapped"),
+            CacheAssociativityType::NWay => write!(f, "{}-way set associative", self.ways),
+            CacheAssociativityType::FullyAssociative => write!(f, "fully associative"),
+        }
+    }
+}
+
 #[bitfield(bits = 16)]
 #[derive(Debug, Clone, Default)]
 pub struct CacheFlags {
@@ -103,9 +139,138 @@ pub struct CacheDescription {
     pub associativity: CacheAssociativity,
     pub partitions: u16,
     pub max_threads_sharing: u16,
+    pub instances: usize,
 }
 
-fn walk_amd_cache_extended(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> bool {
+#[derive(Debug)]
+pub struct CacheVec(pub Vec<CacheDescription>);
+
+fn size_str(kb: u32) -> String {
+    if kb >= 1024 {
+        format!("{}MB", kb / 1024)
+    } else {
+        format!("{}KB", kb)
+    }
+}
+
+fn pagetypes_str(flags: &CacheFlags) -> String {
+    let mut names: Vec<String> = vec![];
+    if flags.pages_4k() {
+        names.push("4KB".to_string());
+    }
+    if flags.pages_2m() {
+        names.push("2MB".to_string());
+    }
+    if flags.pages_4m() {
+        names.push("4MB".to_string());
+    }
+    if flags.pages_1g() {
+        names.push("1GB".to_string());
+    }
+    if names.len() < 3 {
+        names.join(" or ")
+    } else {
+        let mut result: String = names[..names.len() - 1].join(", ");
+        result.push_str(" or ");
+        result.push_str(&names[names.len() - 1]);
+        result
+    }
+}
+
+impl CacheDescription {
+    fn fmt_cache(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // e.g. 48KB L1 data cache
+        write!(
+            f,
+            "{: >2} x {: >5} {: <2?} {: <}\n",
+            self.instances,
+            size_str(self.size),
+            self.level,
+            self.cachetype
+        )?;
+        // e.g. 8-way set associative
+        write!(f, "{: >11}{}\n", "", self.associativity)?;
+        // e.g. 64 byte line size
+        write!(f, "{: >11}{} byte line size\n", "", self.linesize)?;
+        if self.flags.ecc() {
+            write!(f, "{: >11}ECC\n", "")?;
+        }
+        if self.flags.self_initializing() {
+            write!(f, "{: >11}Self-initializing\n", "")?;
+        }
+        if self.flags.inclusive() {
+            write!(f, "{: >11}Inclusive of lower cache levels\n", "")?;
+        }
+        if self.flags.complex_indexing() {
+            write!(f, "{: >11}Complex indexing\n", "")?;
+        }
+        if self.flags.wbinvd_not_inclusive() {
+            write!(f, "{: >11}Does not invalidate lower cache levels\n", "")?;
+        }
+        if self.flags.undocumented() {
+            write!(f, "{: >11}Undocumented descriptor\n", "")?;
+        }
+        //write!(f, "{: >11}Shared by max {} threads\n", "", self.max_threads_sharing);
+        Ok(())
+    }
+
+    fn fmt_tlb(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let cachename = format!("{:?} {}", self.level, self.cachetype);
+        // e.g. L1 code TLB: 4KB pages
+        write!(
+            f,
+            "{: >17}: {} pages\n",
+            cachename,
+            pagetypes_str(&self.flags)
+        )?;
+        // e.g. 4 entries
+        write!(f, "{: >19}{} entries\n", "", self.size)?;
+        // e.g. 8-way set associative
+        write!(f, "{: >19}{}\n", "", self.associativity)?;
+        if self.max_threads_sharing > 0 {
+            // e.g. Shared by max 8 threads
+            write!(
+                f,
+                "{: >19}Shared by max {} threads\n",
+                "", self.max_threads_sharing
+            )?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for CacheDescription {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.cachetype {
+            CacheType::Data | CacheType::Code | CacheType::Unified | CacheType::Trace => {
+                self.fmt_cache(f)
+            }
+            CacheType::DataTLB
+            | CacheType::CodeTLB
+            | CacheType::SharedTLB
+            | CacheType::LoadOnlyTLB
+            | CacheType::StoreOnlyTLB => self.fmt_tlb(f),
+            _ => panic!(
+                "Don't know how to describe cache type {:#?}",
+                self.cachetype
+            ),
+        }
+        //write!(f, "SOME KINDA CACHE LOL\n")?;
+    }
+}
+
+impl fmt::Display for CacheVec {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Caches:\n")?;
+        for v in &self.0 {
+            let formatted = format!("{}\n", v);
+            write!(f, "{}", indent(&formatted, "  "))?;
+        }
+        Ok(())
+    }
+}
+
+fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
     #[bitfield(bits = 32)]
     struct EaxCache {
         cachetype: B5,
@@ -139,12 +304,12 @@ fn walk_amd_cache_extended(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription
         __: B30,
     }
 
-    if !cpuid.has_feature_bit(0x8000_0001, 0, RegisterName::ECX, 22) {
+    if !cpu.has_feature_bit(0x8000_0001, 0, RegisterName::ECX, 22) {
         return false;
     }
 
     let mut subleaf: u32 = 0;
-    while let Some(raw) = cpuid.get_subleaf(0x8000_001D, subleaf) {
+    while let Some(raw) = cpu.get_subleaf(0x8000_001D, subleaf) {
         let eax = EaxCache::from_bytes(raw.output.eax.to_le_bytes());
         let ebx = EbxCache::from_bytes(raw.output.ebx.to_le_bytes());
         let ecx = EcxCache::from_bytes(raw.output.ecx.to_le_bytes());
@@ -188,7 +353,12 @@ fn walk_amd_cache_extended(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription
         desc.flags.set_wbinvd_not_inclusive(edx.wbinvd());
         desc.flags.set_inclusive(edx.inclusive());
 
-        out.push(desc);
+        desc.instances = match system.cpus.len() >= (eax.sharing() + 1) as usize {
+            true => system.cpus.len() / (eax.sharing() + 1) as usize,
+            false => 1,
+        };
+
+        out.0.push(desc);
 
         subleaf += 1;
     }
@@ -196,11 +366,11 @@ fn walk_amd_cache_extended(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription
     true
 }
 
-fn walk_amd_cache_legacy(_cpuid: &CPUIDSnapshot, _out: &mut Vec<CacheDescription>) {
+fn walk_amd_cache_legacy(_system: &System, _cpu: &Processor, _out: &mut CacheVec) {
     // TODO
 }
 
-fn walk_amd_cache(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
+fn walk_amd_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // We want to prefer, in order:
     //
     // - Extended Cache Topology (0x8000_001D)
@@ -208,12 +378,12 @@ fn walk_amd_cache(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
     //
     // The latter is less expressive in terms of cache details, so we should try
     // to use Extended Cache Topology wherever possible.
-    if !walk_amd_cache_extended(cpuid, out) {
-        walk_amd_cache_legacy(cpuid, out);
+    if !walk_amd_cache_extended(system, cpu, out) {
+        walk_amd_cache_legacy(system, cpu, out);
     }
 }
 
-fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
+fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
     // Read from:
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
@@ -227,7 +397,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
         dtlb_associativity: u8,
     }
 
-    if let Some(raw) = cpuid.get_subleaf(0x8000_0005, 0) {
+    if let Some(raw) = cpu.get_subleaf(0x8000_0005, 0) {
         let level = CacheLevel::L1;
 
         for register in vec![RegisterName::EBX, RegisterName::EAX] {
@@ -241,7 +411,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
             let tlb = L1TlbDesc::from_bytes(regbytes);
 
             if tlb.dtlb_entries() > 0 {
-                out.push(CacheDescription {
+                out.0.push(CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
                     associativity: CacheAssociativity::from_identifier(tlb.dtlb_associativity()),
@@ -251,7 +421,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
                 });
             }
             if tlb.itlb_entries() > 0 {
-                out.push(CacheDescription {
+                out.0.push(CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
                     associativity: CacheAssociativity::from_identifier(tlb.itlb_associativity()),
@@ -272,7 +442,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
         dtlb_associativity: B4,
     }
 
-    if let Some(raw) = cpuid.get_subleaf(0x8000_0006, 0) {
+    if let Some(raw) = cpu.get_subleaf(0x8000_0006, 0) {
         let level = CacheLevel::L2;
 
         for register in vec![RegisterName::EBX, RegisterName::EAX] {
@@ -286,7 +456,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
             let tlb = L2TlbDesc::from_bytes(regbytes);
 
             if tlb.dtlb_entries() > 0 {
-                out.push(CacheDescription {
+                out.0.push(CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
                     associativity: match tlb.dtlb_associativity() {
@@ -306,7 +476,7 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
                 });
             }
             if tlb.itlb_entries() > 0 {
-                out.push(CacheDescription {
+                out.0.push(CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
                     associativity: match tlb.dtlb_associativity() {
@@ -329,12 +499,12 @@ fn walk_amd_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
     }
 }
 
-fn walk_amd(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
-    walk_amd_cache(cpuid, out);
-    walk_amd_tlb(cpuid, out);
+fn walk_amd(system: &System, cpu: &Processor, out: &mut CacheVec) {
+    walk_amd_cache(system, cpu, out);
+    walk_amd_tlb(system, cpu, out);
 }
 
-fn walk_intel_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> bool {
+fn walk_intel_dcp(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
     #[bitfield(bits = 32)]
     #[derive(Debug)]
     struct EaxCache {
@@ -375,7 +545,7 @@ fn walk_intel_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
     let mut retval: bool = false;
 
     let mut subleaf: u32 = 0;
-    while let Some(raw) = cpuid.get_subleaf(0x0000_0004, subleaf) {
+    while let Some(raw) = cpu.get_subleaf(0x0000_0004, subleaf) {
         let eax = EaxCache::from_bytes(raw.output.eax.to_le_bytes());
         let ebx = EbxCache::from_bytes(raw.output.ebx.to_le_bytes());
         let ecx = EcxCache::from_bytes(raw.output.ecx.to_le_bytes());
@@ -397,7 +567,7 @@ fn walk_intel_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
             associativity_type = CacheAssociativityType::DirectMapped;
         }
 
-        out.push(CacheDescription {
+        out.0.push(CacheDescription {
             size: ((ebx.associativity() as u32 + 1)
                 * (ebx.partitions() as u32 + 1)
                 * (ebx.linesize() as u32 + 1)
@@ -433,6 +603,11 @@ fn walk_intel_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
                 .with_complex_indexing(edx.complex_indexing())
                 .with_wbinvd_not_inclusive(edx.wbinvd()),
 
+            instances: match system.cpus.len() >= (eax.max_threads_sharing() + 1) as usize {
+                true => system.cpus.len() / (eax.max_threads_sharing() + 1) as usize,
+                false => 1,
+            },
+
             ..Default::default()
         });
 
@@ -442,7 +617,7 @@ fn walk_intel_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
     retval
 }
 
-fn walk_intel_dat(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> bool {
+fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
     #[bitfield(bits = 32)]
     #[derive(Debug)]
     struct EaxTLB {
@@ -487,7 +662,7 @@ fn walk_intel_dat(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
     let mut retval: bool = false;
 
     let mut subleaf: u32 = 0;
-    while let Some(raw) = cpuid.get_subleaf(0x0000_0018, subleaf) {
+    while let Some(raw) = cpu.get_subleaf(0x0000_0018, subleaf) {
         let _eax = EaxTLB::from_bytes(raw.output.eax.to_le_bytes());
         let ebx = EbxTLB::from_bytes(raw.output.ebx.to_le_bytes());
         let ecx = EcxTLB::from_bytes(raw.output.ecx.to_le_bytes());
@@ -498,7 +673,7 @@ fn walk_intel_dat(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
             // DCP leaf.
             retval = true;
 
-            out.push(CacheDescription {
+            out.0.push(CacheDescription {
                 size: ecx.sets(),
 
                 level: match edx.level() {
@@ -538,6 +713,11 @@ fn walk_intel_dat(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
                     .with_pages_4m(ebx.has_4m_pages())
                     .with_pages_1g(ebx.has_1g_pages()),
 
+                instances: match system.cpus.len() >= (edx.max_threads_sharing() + 1) as usize {
+                    true => system.cpus.len() / (edx.max_threads_sharing() + 1) as usize,
+                    false => 1,
+                },
+
                 ..Default::default()
             });
         }
@@ -548,28 +728,28 @@ fn walk_intel_dat(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> boo
     retval
 }
 
-fn walk_intel_cache(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
-    if !walk_intel_dcp(cpuid, out) {
+fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
+    if !walk_intel_dcp(system, cpu, out) {
         // TODO: Leaf 0x2
-        //walk_intel_legacy(cpuid, out);
+        //walk_intel_legacy(cpu, out);
     }
 }
 
-fn walk_intel_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
-    if !walk_intel_dat(cpuid, out) {
+fn walk_intel_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
+    if !walk_intel_dat(system, cpu, out) {
         // TODO: Leaf 0x2
-        //walk_intel_legacy_tlb(cpuid, out);
+        //walk_intel_legacy_tlb(cpu, out);
     }
 }
 
-fn walk_intel(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
-    walk_intel_cache(cpuid, out);
-    walk_intel_tlb(cpuid, out);
+fn walk_intel(system: &System, cpu: &Processor, out: &mut CacheVec) {
+    walk_intel_cache(system, cpu, out);
+    walk_intel_tlb(system, cpu, out);
 }
 
-pub fn walk(cpuid: &CPUIDSnapshot) -> Vec<CacheDescription> {
-    let mut caches: Vec<CacheDescription> = vec![];
-    walk_amd(cpuid, &mut caches);
-    walk_intel(cpuid, &mut caches);
+pub fn describe_caches(system: &System, cpu: &Processor) -> CacheVec {
+    let mut caches: CacheVec = CacheVec(vec![]);
+    walk_amd(system, cpu, &mut caches);
+    walk_intel(system, cpu, &mut caches);
     caches
 }
