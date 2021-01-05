@@ -14,10 +14,10 @@ use crate::cpuid::{Processor, RegisterName, System};
 #[repr(u8)]
 pub enum CacheType {
     Unknown = 0,
-    Data = 1,
-    Code = 2,
-    Unified = 3,
-    Trace = 4,
+    Code = 1,
+    Trace = 2,
+    Data = 3,
+    Unified = 4,
     DataTLB = 5,
     CodeTLB = 6,
     SharedTLB = 7,
@@ -176,7 +176,10 @@ impl PartialEq for CacheDescription {
 #[derive(Debug)]
 pub struct CacheVec(pub Vec<CacheDescription>);
 
-fn size_str(kb: u32) -> String {
+fn size_str(kb: u32, cachetype: CacheType) -> String {
+    if cachetype == CacheType::Trace {
+        return format!("{}K-µop", kb);
+    }
     if kb >= 1024 {
         format!("{}MB", kb / 1024)
     } else {
@@ -222,9 +225,9 @@ impl CacheDescription {
             // e.g. 8 x 48KB L1 data cache
             write!(
                 f,
-                "{: >2} x {: >5} {: <2?} {: <}\n",
+                "{: >2} x {: >7} {: <2?} {: <}\n",
                 self.instances,
-                size_str(self.size),
+                size_str(self.size, self.cachetype),
                 self.level,
                 self.cachetype
             )?;
@@ -232,34 +235,36 @@ impl CacheDescription {
             // e.g. 48KB L1 data cache
             write!(
                 f,
-                "{: >5}{: >5} {: <2?} {: <}\n",
+                "{: >5}{: >7} {: <2?} {: <}\n",
                 "",
-                size_str(self.size),
+                size_str(self.size, self.cachetype),
                 self.level,
                 self.cachetype
             )?;
         }
         // e.g. 8-way set associative
-        write!(f, "{: >11}{}\n", "", self.associativity)?;
-        // e.g. 64 byte line size
-        write!(f, "{: >11}{} byte line size\n", "", self.linesize)?;
+        write!(f, "{: >13}{}\n", "", self.associativity)?;
+        if self.cachetype != CacheType::Trace {
+            // e.g. 64 byte line size
+            write!(f, "{: >13}{} byte line size\n", "", self.linesize)?;
+        }
         if self.flags.ecc() {
-            write!(f, "{: >11}ECC\n", "")?;
+            write!(f, "{: >13}ECC\n", "")?;
         }
         if self.flags.self_initializing() {
-            write!(f, "{: >11}Self-initializing\n", "")?;
+            write!(f, "{: >13}Self-initializing\n", "")?;
         }
         if self.flags.inclusive() {
-            write!(f, "{: >11}Inclusive of lower cache levels\n", "")?;
+            write!(f, "{: >13}Inclusive of lower cache levels\n", "")?;
         }
         if self.flags.complex_indexing() {
-            write!(f, "{: >11}Complex indexing\n", "")?;
+            write!(f, "{: >13}Complex indexing\n", "")?;
         }
         if self.flags.wbinvd_not_inclusive() {
-            write!(f, "{: >11}Does not invalidate lower cache levels\n", "")?;
+            write!(f, "{: >13}Does not invalidate lower cache levels\n", "")?;
         }
         if self.flags.undocumented() {
-            write!(f, "{: >11}Undocumented descriptor\n", "")?;
+            write!(f, "{: >13}Undocumented descriptor\n", "")?;
         }
         //write!(f, "{: >11}Shared by max {} threads\n", "", self.max_threads_sharing);
         Ok(())
