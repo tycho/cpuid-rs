@@ -1,4 +1,7 @@
 use std::fmt;
+use std::fs::File;
+use std::io::{prelude::*, BufReader};
+use scan_fmt::*;
 
 #[derive(Debug, Clone)]
 pub struct LeafID {
@@ -104,7 +107,7 @@ impl CPUID {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CPUIDSnapshot {
     pub leaves: Vec<CPUID>,
 }
@@ -153,6 +156,41 @@ impl CPUIDSnapshot {
             }
         }
     }
+}
+
+pub fn snapshots_from_file(filename: &str) -> std::io::Result<Vec<(u32, CPUIDSnapshot)>> {
+    let file = File::open(filename)?;
+    let reader = BufReader::new(file);
+
+    let mut snapshots: Vec<(u32, CPUIDSnapshot)> = vec![];
+    let mut snapshot: CPUIDSnapshot = CPUIDSnapshot{ leaves: vec![] };
+    let mut cpu_index: i32 = -1;
+
+    for line in reader.lines() {
+        let line = line?;
+        if let Ok((in_eax, in_ecx, out_eax, out_ebx, out_ecx, out_edx)) =
+            scan_fmt!(&line, "CPUID {x}:{x} = {x} {x} {x} {x}", [hex u32], [hex u32], [hex u32], [hex u32], [hex u32], [hex u32])
+        {
+            snapshot.leaves.push(
+                CPUID {
+                    input: LeafID { eax: in_eax, ecx: in_ecx },
+                    output: Registers { eax: out_eax, ebx: out_ebx, ecx: out_ecx, edx: out_edx },
+                }
+            )
+        } else if let Ok(sc_index) = scan_fmt!(&line, "CPU {}:", i32) {
+            if cpu_index >= 0 {
+                snapshots.push((cpu_index as u32, snapshot));
+                snapshot = CPUIDSnapshot{ leaves: vec![] };
+            }
+            cpu_index = sc_index;
+        }
+    }
+
+    if cpu_index >= 0 {
+        snapshots.push((cpu_index as u32, snapshot));
+    }
+
+    Ok(snapshots)
 }
 
 impl fmt::Display for CPUID {
