@@ -14,6 +14,7 @@ pub enum CacheType {
     Trace,
     DataTLB,
     CodeTLB,
+    SharedTLB,
     LoadOnlyTLB,
     StoreOnlyTLB,
 }
@@ -333,7 +334,7 @@ fn walk_amd(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
     walk_amd_tlb(cpuid, out);
 }
 
-fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
+fn walk_intel_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> bool {
     #[bitfield(bits = 32)]
     #[derive(Debug)]
     struct EaxCache {
@@ -371,6 +372,8 @@ fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
         __: B29,
     }
 
+    let mut retval: bool = false;
+
     let mut subleaf: u32 = 0;
     while let Some(raw) = cpuid.get_subleaf(0x0000_0004, subleaf) {
         let eax = EaxCache::from_bytes(raw.output.eax.to_le_bytes());
@@ -381,6 +384,10 @@ fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
         if eax.level() == 0 {
             break;
         }
+
+        // Found at least one valid cache description, count this as a working
+        // DCP leaf.
+        retval = true;
 
         let mut associativity_type = CacheAssociativityType::NWay;
         if eax.fully_associative() {
@@ -431,11 +438,138 @@ fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
 
         subleaf += 1;
     }
+
+    retval
+}
+
+fn walk_intel_dat(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) -> bool {
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EaxTLB {
+        #[skip]
+        __: B32,
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EbxTLB {
+        has_4k_pages: bool,
+        has_2m_pages: bool,
+        has_4m_pages: bool,
+        has_1g_pages: bool,
+        #[skip]
+        __: B4,
+        partitions: B3,
+        #[skip]
+        __: B5,
+        associativity: u16,
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EcxTLB {
+        sets: u32,
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EdxTLB {
+        tlbtype: B5,
+        level: B3,
+        fully_associative: bool,
+        #[skip]
+        __: B5,
+        max_threads_sharing: B12,
+        #[skip]
+        __: B6,
+    }
+
+    let mut retval: bool = false;
+
+    let mut subleaf: u32 = 0;
+    while let Some(raw) = cpuid.get_subleaf(0x0000_0018, subleaf) {
+        let _eax = EaxTLB::from_bytes(raw.output.eax.to_le_bytes());
+        let ebx = EbxTLB::from_bytes(raw.output.ebx.to_le_bytes());
+        let ecx = EcxTLB::from_bytes(raw.output.ecx.to_le_bytes());
+        let edx = EdxTLB::from_bytes(raw.output.edx.to_le_bytes());
+
+        if edx.tlbtype() != 0 {
+            // Found at least one valid cache description, count this as a working
+            // DCP leaf.
+            retval = true;
+
+            out.push(CacheDescription {
+                size: ecx.sets(),
+
+                level: match edx.level() {
+                    0 => CacheLevel::L0,
+                    1 => CacheLevel::L1,
+                    2 => CacheLevel::L2,
+                    3 => CacheLevel::L3,
+                    _ => CacheLevel::default(),
+                },
+
+                cachetype: match edx.tlbtype() {
+                    1 => CacheType::DataTLB,
+                    2 => CacheType::CodeTLB,
+                    3 => CacheType::SharedTLB,
+                    4 => CacheType::LoadOnlyTLB,
+                    5 => CacheType::StoreOnlyTLB,
+                    _ => CacheType::Unknown,
+                },
+
+                associativity: CacheAssociativity {
+                    mapping: match edx.fully_associative() {
+                        true => CacheAssociativityType::FullyAssociative,
+                        false => CacheAssociativityType::NWay,
+                    },
+                    ways: match edx.fully_associative() {
+                        true => 0xFF,
+                        false => ebx.associativity(),
+                    },
+                },
+
+                partitions: ebx.partitions() as u16 + 1,
+                max_threads_sharing: edx.max_threads_sharing() + 1,
+
+                flags: CacheFlags::new()
+                    .with_pages_4k(ebx.has_4k_pages())
+                    .with_pages_2m(ebx.has_2m_pages())
+                    .with_pages_4m(ebx.has_4m_pages())
+                    .with_pages_1g(ebx.has_1g_pages()),
+
+                ..Default::default()
+            });
+        }
+
+        subleaf += 1;
+    }
+
+    retval
+}
+
+fn walk_intel_cache(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
+    if !walk_intel_dcp(cpuid, out) {
+        // TODO: Leaf 0x2
+        //walk_intel_legacy(cpuid, out);
+    }
+}
+
+fn walk_intel_tlb(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
+    if !walk_intel_dat(cpuid, out) {
+        // TODO: Leaf 0x2
+        //walk_intel_legacy_tlb(cpuid, out);
+    }
+}
+
+fn walk_intel(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
+    walk_intel_cache(cpuid, out);
+    walk_intel_tlb(cpuid, out);
 }
 
 pub fn walk(cpuid: &CPUIDSnapshot) -> Vec<CacheDescription> {
     let mut caches: Vec<CacheDescription> = vec![];
     walk_amd(cpuid, &mut caches);
-    walk_dcp(cpuid, &mut caches);
+    walk_intel(cpuid, &mut caches);
     caches
 }
