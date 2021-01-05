@@ -333,12 +333,105 @@ fn walk_amd(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
     walk_amd_tlb(cpuid, out);
 }
 
-fn walk_dcp() {
-    // TODO
+fn walk_dcp(cpuid: &CPUIDSnapshot, out: &mut Vec<CacheDescription>) {
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EaxCache {
+        cachetype: B5,
+        level: B3,
+        self_initializing: bool,
+        fully_associative: bool,
+        #[skip] __: B4,
+        max_threads_sharing: B12,
+        apics_reserved: B6,
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EbxCache {
+        linesize: B12,
+        partitions: B10,
+        associativity: B10,
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EcxCache {
+        sets: u32,
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct EdxCache {
+        wbinvd: bool,
+        inclusive: bool,
+        complex_indexing: bool,
+        #[skip] __: B29,
+    }
+
+    let mut subleaf: u32 = 0;
+    while let Some(raw) = cpuid.get_subleaf(0x0000_0004, subleaf) {
+        let eax = EaxCache::from_bytes(raw.output.eax.to_le_bytes());
+        let ebx = EbxCache::from_bytes(raw.output.ebx.to_le_bytes());
+        let ecx = EcxCache::from_bytes(raw.output.ecx.to_le_bytes());
+        let edx = EdxCache::from_bytes(raw.output.edx.to_le_bytes());
+
+        if eax.level() == 0 {
+            break
+        }
+
+        let mut associativity_type = CacheAssociativityType::NWay;
+        if eax.fully_associative() {
+            associativity_type = CacheAssociativityType::FullyAssociative;
+        }
+        if ebx.associativity() + 1 == 1 {
+            associativity_type = CacheAssociativityType::DirectMapped;
+        }
+
+        out.push(
+            CacheDescription {
+                size: ((ebx.associativity() as u32 + 1) * (ebx.partitions() as u32 + 1) * (ebx.linesize() as u32 + 1) * (ecx.sets() as u32 + 1)) / 1024,
+
+                level: match eax.level() {
+                    1 => CacheLevel::L1,
+                    2 => CacheLevel::L2,
+                    3 => CacheLevel::L3,
+                    _ => CacheLevel::default(),
+                },
+
+                cachetype: match eax.cachetype() {
+                    1 => CacheType::Data,
+                    2 => CacheType::Code,
+                    3 => CacheType::Unified,
+                    _ => CacheType::Unknown,
+                },
+
+                associativity: CacheAssociativity {
+                    mapping: associativity_type,
+                    ways: ebx.associativity() + 1,
+                },
+
+                linesize: ebx.linesize() + 1,
+                partitions: ebx.partitions() + 1,
+                max_threads_sharing: eax.max_threads_sharing() + 1,
+
+                flags: CacheFlags::new()
+                    .with_self_initializing(eax.self_initializing())
+                    .with_inclusive(edx.inclusive())
+                    .with_complex_indexing(edx.complex_indexing())
+                    .with_wbinvd_not_inclusive(edx.wbinvd()),
+
+                ..Default::default()
+            }
+        );
+
+        subleaf += 1;
+    }
 }
 
 pub fn walk(cpuid: &CPUIDSnapshot) -> Vec<CacheDescription> {
     let mut caches: Vec<CacheDescription> = vec![];
     walk_amd(cpuid, &mut caches);
+    walk_dcp(cpuid, &mut caches);
     caches
 }
