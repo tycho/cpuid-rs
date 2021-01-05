@@ -1,24 +1,26 @@
 #![allow(dead_code, unused_attributes)]
 
 use modular_bitfield::prelude::*;
+use std::cmp::Ordering;
 use std::fmt;
 use textwrap::indent;
 
+use crate::cache_descriptors::lookup_cache_descriptor;
 use crate::cpuid::{Processor, RegisterName, System};
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum CacheType {
     Unknown = 0,
-    Data,
-    Code,
-    Unified,
-    Trace,
-    DataTLB,
-    CodeTLB,
-    SharedTLB,
-    LoadOnlyTLB,
-    StoreOnlyTLB,
+    Data = 1,
+    Code = 2,
+    Unified = 3,
+    Trace = 4,
+    DataTLB = 5,
+    CodeTLB = 6,
+    SharedTLB = 7,
+    LoadOnlyTLB = 8,
+    StoreOnlyTLB = 9,
 }
 
 impl Default for CacheType {
@@ -48,15 +50,15 @@ impl fmt::Display for CacheType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum CacheLevel {
     Unknown = 0,
-    L0,
-    L1,
-    L2,
-    L3,
-    L4,
+    L0 = 1,
+    L1 = 2,
+    L2 = 3,
+    L3 = 4,
+    L4 = 5,
 }
 
 impl Default for CacheLevel {
@@ -65,7 +67,7 @@ impl Default for CacheLevel {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum CacheAssociativityType {
     Unknown = 0,
@@ -79,14 +81,14 @@ impl Default for CacheAssociativityType {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CacheAssociativity {
     pub mapping: CacheAssociativityType,
     pub ways: u16,
 }
 
 impl CacheAssociativity {
-    fn from_identifier(id: u8) -> CacheAssociativity {
+    pub fn from_identifier(id: u8) -> CacheAssociativity {
         CacheAssociativity {
             mapping: match id {
                 0x00 => CacheAssociativityType::Unknown,
@@ -111,7 +113,7 @@ impl fmt::Display for CacheAssociativity {
 }
 
 #[bitfield(bits = 16)]
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CacheFlags {
     pub undocumented: bool,
     pub ia64: bool,
@@ -129,7 +131,7 @@ pub struct CacheFlags {
     __: B4,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq)]
 pub struct CacheDescription {
     pub level: CacheLevel,
     pub cachetype: CacheType,
@@ -140,6 +142,33 @@ pub struct CacheDescription {
     pub partitions: u16,
     pub max_threads_sharing: u16,
     pub instances: usize,
+}
+
+impl Ord for CacheDescription {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let mut ord: Ordering = self.cachetype.cmp(&other.cachetype);
+        if ord == Ordering::Equal {
+            ord = self.level.cmp(&other.level);
+        }
+        ord
+    }
+}
+
+impl PartialOrd for CacheDescription {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for CacheDescription {
+    fn eq(&self, other: &Self) -> bool {
+        self.level == other.level
+            && self.cachetype == other.cachetype
+            && self.size == other.size
+            && self.linesize == other.linesize
+            && self.associativity == other.associativity
+            && self.partitions == other.partitions
+    }
 }
 
 #[derive(Debug)]
@@ -177,17 +206,37 @@ fn pagetypes_str(flags: &CacheFlags) -> String {
     }
 }
 
+fn first_letter_to_uppercase(s1: String) -> String {
+    let mut c = s1.chars();
+    match c.next() {
+        None => String::new(),
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+    }
+}
+
 impl CacheDescription {
     fn fmt_cache(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // e.g. 48KB L1 data cache
-        write!(
-            f,
-            "{: >2} x {: >5} {: <2?} {: <}\n",
-            self.instances,
-            size_str(self.size),
-            self.level,
-            self.cachetype
-        )?;
+        if self.instances > 0 {
+            // e.g. 8 x 48KB L1 data cache
+            write!(
+                f,
+                "{: >2} x {: >5} {: <2?} {: <}\n",
+                self.instances,
+                size_str(self.size),
+                self.level,
+                self.cachetype
+            )?;
+        } else {
+            // e.g. 48KB L1 data cache
+            write!(
+                f,
+                "{: >5}{: >5} {: <2?} {: <}\n",
+                "",
+                size_str(self.size),
+                self.level,
+                self.cachetype
+            )?;
+        }
         // e.g. 8-way set associative
         write!(f, "{: >11}{}\n", "", self.associativity)?;
         // e.g. 64 byte line size
@@ -215,12 +264,15 @@ impl CacheDescription {
     }
 
     fn fmt_tlb(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let cachename = format!("{:?} {}", self.level, self.cachetype);
+        let cachename = match self.level {
+            CacheLevel::Unknown => format!("{}", self.cachetype),
+            _ => format!("{:?} {}", self.level, self.cachetype),
+        };
         // e.g. L1 code TLB: 4KB pages
         write!(
             f,
             "{: >17}: {} pages\n",
-            cachename,
+            first_letter_to_uppercase(cachename),
             pagetypes_str(&self.flags)
         )?;
         // e.g. 4 entries
@@ -728,17 +780,113 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
     retval
 }
 
+fn walk_intel_legacy_cache(
+    _system: &System,
+    cpu: &Processor,
+    out: &mut CacheVec,
+    filter: &Vec<CacheType>,
+) {
+    if let Some(raw) = cpu.get_subleaf(0x0000_0002, 0) {
+        let mut bytes: Vec<u8> = vec![];
+        bytes.extend_from_slice(&raw.output.eax.to_le_bytes());
+        bytes.extend_from_slice(&raw.output.ebx.to_le_bytes());
+        bytes.extend_from_slice(&raw.output.ecx.to_le_bytes());
+        bytes.extend_from_slice(&raw.output.edx.to_le_bytes());
+        for descriptor in bytes.iter() {
+            if let Some(desc) = lookup_cache_descriptor(*descriptor) {
+                if filter.contains(&desc.cachetype) {
+                    out.0.push(desc);
+                }
+            } else {
+                // Handle the weird special cases that don't map to a single
+                // cache type.
+                match descriptor {
+                    0x63 => {
+                        if filter.contains(&CacheType::DataTLB) {
+                            out.0.push(CacheDescription {
+                                cachetype: CacheType::DataTLB,
+                                size: 32,
+                                flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+                                associativity: CacheAssociativity::from_identifier(0x04),
+                                ..Default::default()
+                            });
+                            out.0.push(CacheDescription {
+                                cachetype: CacheType::DataTLB,
+                                size: 4,
+                                flags: CacheFlags::new().with_pages_1g(true),
+                                associativity: CacheAssociativity::from_identifier(0x04),
+                                ..Default::default()
+                            });
+                        }
+                    }
+                    0xB1 => {
+                        if filter.contains(&CacheType::CodeTLB) {
+                            out.0.push(CacheDescription {
+                                cachetype: CacheType::CodeTLB,
+                                size: 8,
+                                flags: CacheFlags::new().with_pages_2m(true),
+                                associativity: CacheAssociativity::from_identifier(0x04),
+                                ..Default::default()
+                            });
+                            out.0.push(CacheDescription {
+                                cachetype: CacheType::CodeTLB,
+                                size: 4,
+                                flags: CacheFlags::new().with_pages_4m(true),
+                                associativity: CacheAssociativity::from_identifier(0x04),
+                                ..Default::default()
+                            });
+                        }
+                    }
+                    0xC3 => {
+                        if filter.contains(&CacheType::SharedTLB) {
+                            out.0.push(CacheDescription {
+                                cachetype: CacheType::SharedTLB,
+                                level: CacheLevel::L2,
+                                size: 1536,
+                                flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true),
+                                associativity: CacheAssociativity::from_identifier(0x06),
+                                ..Default::default()
+                            });
+                            out.0.push(CacheDescription {
+                                cachetype: CacheType::SharedTLB,
+                                level: CacheLevel::L2,
+                                size: 16,
+                                flags: CacheFlags::new().with_pages_1g(true),
+                                associativity: CacheAssociativity::from_identifier(0x04),
+                                ..Default::default()
+                            });
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        out.0.sort();
+    }
+}
+
 fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dcp(system, cpu, out) {
-        // TODO: Leaf 0x2
-        //walk_intel_legacy(cpu, out);
+        let cache_types: Vec<CacheType> = vec![
+            CacheType::Code,
+            CacheType::Data,
+            CacheType::Unified,
+            CacheType::Trace,
+        ];
+        walk_intel_legacy_cache(system, cpu, out, &cache_types);
     }
 }
 
 fn walk_intel_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dat(system, cpu, out) {
-        // TODO: Leaf 0x2
-        //walk_intel_legacy_tlb(cpu, out);
+        let cache_types: Vec<CacheType> = vec![
+            CacheType::CodeTLB,
+            CacheType::DataTLB,
+            CacheType::SharedTLB,
+            CacheType::LoadOnlyTLB,
+            CacheType::StoreOnlyTLB,
+        ];
+        walk_intel_legacy_cache(system, cpu, out, &cache_types);
     }
 }
 
