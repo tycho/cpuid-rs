@@ -68,13 +68,24 @@ impl Registers {
     }
 }
 
+#[cfg(target_arch = "x86")]
+use core::arch::x86::__cpuid_count;
+#[cfg(target_arch = "x86_64")]
+use core::arch::x86_64::__cpuid_count;
+
 pub fn cpuid(input: &LeafID, output: &mut Registers) {
     unsafe {
-        asm!("cpuid",
-            inout("eax") input.eax => output.eax,
-            lateout("ebx") output.ebx,
-            inout("ecx") input.ecx => output.ecx,
-            lateout("edx") output.edx)
+        let result = __cpuid_count(input.eax, input.ecx);
+        output.eax = result.eax;
+        output.ebx = result.ebx;
+        output.ecx = result.ecx;
+        output.edx = result.edx;
+    // Alternate implementation, using rust nightly
+    //    asm!("cpuid",
+    //        inout("eax") input.eax => output.eax,
+    //        lateout("ebx") output.ebx,
+    //        inout("ecx") input.ecx => output.ecx,
+    //        lateout("edx") output.edx)
     }
 }
 

@@ -1,4 +1,5 @@
-#![feature(asm)]
+// Depends on rust nightly
+//#![feature(asm)]
 #[macro_use]
 
 pub mod cpuid;
