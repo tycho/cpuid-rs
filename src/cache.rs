@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use std::fmt;
 use textwrap::indent;
 
-#[cfg(feature="legacy-cache-descriptors")]
+#[cfg(feature = "legacy-cache-descriptors")]
 use crate::cache_descriptors::lookup_cache_descriptor;
 
 use crate::cpuid::{Processor, RegisterName, System};
@@ -787,7 +787,7 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
     retval
 }
 
-#[cfg(feature="legacy-cache-descriptors")]
+#[cfg(feature = "legacy-cache-descriptors")]
 fn walk_intel_legacy_cache(
     _system: &System,
     cpu: &Processor,
@@ -875,7 +875,7 @@ fn walk_intel_legacy_cache(
 
 fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dcp(system, cpu, out) {
-        #[cfg(feature="legacy-cache-descriptors")]
+        #[cfg(feature = "legacy-cache-descriptors")]
         {
             let cache_types: Vec<CacheType> = vec![
                 CacheType::Code,
@@ -890,7 +890,7 @@ fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
 
 fn walk_intel_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dat(system, cpu, out) {
-        #[cfg(feature="legacy-cache-descriptors")]
+        #[cfg(feature = "legacy-cache-descriptors")]
         {
             let cache_types: Vec<CacheType> = vec![
                 CacheType::CodeTLB,

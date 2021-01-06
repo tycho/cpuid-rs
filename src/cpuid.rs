@@ -80,12 +80,12 @@ pub fn cpuid(input: &LeafID, output: &mut Registers) {
         output.ebx = result.ebx;
         output.ecx = result.ecx;
         output.edx = result.edx;
-    // Alternate implementation, using rust nightly
-    //    asm!("cpuid",
-    //        inout("eax") input.eax => output.eax,
-    //        lateout("ebx") output.ebx,
-    //        inout("ecx") input.ecx => output.ecx,
-    //        lateout("edx") output.edx)
+        // Alternate implementation, using rust nightly
+        //    asm!("cpuid",
+        //        inout("eax") input.eax => output.eax,
+        //        lateout("ebx") output.ebx,
+        //        inout("ecx") input.ecx => output.ecx,
+        //        lateout("edx") output.edx)
     }
 }
 
