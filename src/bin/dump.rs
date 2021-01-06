@@ -3,8 +3,7 @@ use std::env;
 
 use cpuid::cpuid::System;
 
-fn print_usage(program: &str, opts: Options)
-{
+fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
     print!("{}", opts.usage(&brief));
 }
@@ -14,12 +13,24 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt("f", "file", "Parse and import dump file instead of reading from local CPUs", "FILE");
-    opts.optopt("c", "cpu", "Which CPU to decode CPUID information from", "INDEX");
+    opts.optopt(
+        "f",
+        "file",
+        "Parse and import dump file instead of reading from local CPUs",
+        "FILE",
+    );
+    opts.optopt(
+        "c",
+        "cpu",
+        "Which CPU to decode CPUID information from",
+        "INDEX",
+    );
     opts.optflag("h", "help", "Print this help text");
     let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m }
-        Err(f) => { panic!(f.to_string()) }
+        Ok(m) => m,
+        Err(f) => {
+            panic!(f.to_string())
+        }
     };
     if matches.opt_present("h") {
         print_usage(&program, opts);
@@ -29,7 +40,11 @@ fn main() {
     // TODO: This kinda sucks because it will silently eat bogus values. We want
     // it to eventually accept integer values (21), integer ranges (21-35),
     // integer lists (21,22,23), or the string "all" (or similar).
-    let cpu_index: i32 = matches.opt_str("cpu").unwrap_or("-1".to_string()).parse::<i32>().unwrap_or(-1);
+    let cpu_index: i32 = matches
+        .opt_str("cpu")
+        .unwrap_or("-1".to_string())
+        .parse::<i32>()
+        .unwrap_or(-1);
 
     let mut cpu_start: u32 = 0;
     let mut cpu_end: u32 = num_cpus::get() as u32 - 1;
