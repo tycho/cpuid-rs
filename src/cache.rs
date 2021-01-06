@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
+use log::*;
 use modular_bitfield::prelude::*;
 use std::cmp::Ordering;
 use std::fmt;
-use log::*;
 use textwrap::indent;
 
 #[cfg(feature = "legacy-cache-descriptors")]
@@ -377,6 +377,11 @@ fn translate_amd_l2_associativity(raw: u8) -> u8 {
 }
 
 fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
+    if cpu.vendor_string != "AuthenticAMD" {
+        debug!("walk_amd_cache_extended() skipped on non-AMD CPU");
+        return false;
+    }
+
     #[bitfield(bits = 32)]
     struct EaxCache {
         cachetype: B5,
@@ -478,6 +483,11 @@ fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) 
     // Read from:
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
+
+    if cpu.vendor_string != "AuthenticAMD" {
+        debug!("walk_amd_cache_legacy() skipped on non-AMD CPU");
+        return;
+    }
 
     #[bitfield(bits = 32)]
     #[derive(Debug)]
@@ -596,6 +606,11 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
     // Read from:
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
+
+    if cpu.vendor_string != "AuthenticAMD" {
+        debug!("walk_amd_tlb() skipped on non-AMD CPU");
+        return;
+    }
 
     #[bitfield(bits = 32)]
     #[derive(Debug)]

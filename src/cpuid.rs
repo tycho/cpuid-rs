@@ -32,6 +32,18 @@ impl LeafID {
     }
 }
 
+pub fn bytes_to_ascii(bytes: Vec<u8>) -> String {
+    let mut string = String::new();
+    for byte in bytes.iter() {
+        if *byte > 31 && *byte < 127 {
+            string.push(*byte as char)
+        } else {
+            string.push('.')
+        }
+    }
+    string
+}
+
 impl Registers {
     pub fn new(eax: u32, ebx: u32, ecx: u32, edx: u32) -> Registers {
         Registers {
@@ -54,17 +66,13 @@ impl Registers {
     /// Try to create an ASCII representation of the bytes in the registers. Uses '.' as
     /// a placeholder for invalid ASCII values.
     pub fn ascii(&self) -> String {
-        let mut string = String::new();
+        let mut bytes: Vec<u8> = vec![];
         for register in [self.eax, self.ebx, self.ecx, self.edx].iter() {
             for byte in register.to_le_bytes().iter() {
-                if *byte > 31 && *byte < 127 {
-                    string.push(*byte as char)
-                } else {
-                    string.push('.')
-                }
+                bytes.push(*byte);
             }
         }
-        string
+        bytes_to_ascii(bytes)
     }
 }
 
@@ -123,17 +131,38 @@ impl RawCPUIDResponse {
 #[derive(Debug, Clone)]
 pub struct Processor {
     pub leaves: Vec<RawCPUIDResponse>,
+    pub vendor_string: String,
 }
 
 impl Processor {
     pub fn new() -> Processor {
-        Processor { leaves: vec![] }
+        Processor {
+            leaves: vec![],
+            vendor_string: "".to_string(),
+        }
     }
 
     pub fn from_local() -> Processor {
         let mut processor: Processor = Processor::new();
         walk_bases(&mut processor.leaves);
+        processor.fill();
         processor
+    }
+
+    fn fill_vendor(&mut self) {
+        if let Some(leaf) = self.get_subleaf(0x0000_0000, 0x0) {
+            let mut bytes: Vec<u8> = vec![];
+            for register in [leaf.output.ebx, leaf.output.edx, leaf.output.ecx].iter() {
+                for byte in register.to_le_bytes().iter() {
+                    bytes.push(*byte);
+                }
+            }
+            self.vendor_string = bytes_to_ascii(bytes);
+        }
+    }
+
+    fn fill(&mut self) {
+        self.fill_vendor();
     }
 
     pub fn get_subleaf(&self, leaf: u32, subleaf: u32) -> Option<&RawCPUIDResponse> {
@@ -210,7 +239,7 @@ impl System {
         let reader = BufReader::new(file);
 
         let mut system: System = System { cpus: vec![] };
-        let mut processor: Processor = Processor { leaves: vec![] };
+        let mut processor: Processor = Processor::new();
         let mut cpu_index: i32 = -1;
 
         for line in reader.lines() {
@@ -231,14 +260,16 @@ impl System {
                 })
             } else if let Ok(sc_index) = scan_fmt!(&line, "CPU {}:", i32) {
                 if cpu_index >= 0 {
+                    processor.fill();
                     system.cpus.push((cpu_index as u32, processor));
-                    processor = Processor { leaves: vec![] };
+                    processor = Processor::new();
                 }
                 cpu_index = sc_index;
             }
         }
 
         if cpu_index >= 0 {
+            processor.fill();
             system.cpus.push((cpu_index as u32, processor));
         }
 
