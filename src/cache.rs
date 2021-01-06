@@ -1055,7 +1055,6 @@ fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 CacheType::Unified,
                 CacheType::Trace,
             ];
-            debug!("walk_intel_legacy_cache() for caches");
             walk_intel_legacy_cache(system, cpu, out, &cache_types);
         }
     }
@@ -1072,7 +1071,6 @@ fn walk_intel_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 CacheType::LoadOnlyTLB,
                 CacheType::StoreOnlyTLB,
             ];
-            debug!("walk_intel_legacy_cache() for TLBs");
             walk_intel_legacy_cache(system, cpu, out, &cache_types);
         }
     }
