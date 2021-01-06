@@ -31,6 +31,22 @@ impl Default for CacheType {
     }
 }
 
+impl CacheType {
+    /// Coalesce types for sorting reasons -- we want caches and then TLBs together.
+    fn broad_type(&self) -> CacheType {
+        match self {
+            CacheType::Unknown => CacheType::Unknown,
+            CacheType::Code | CacheType::Trace | CacheType::Data => CacheType::Code,
+            CacheType::Unified => CacheType::Unified,
+            CacheType::DataTLB
+            | CacheType::CodeTLB
+            | CacheType::SharedTLB
+            | CacheType::LoadOnlyTLB
+            | CacheType::StoreOnlyTLB => CacheType::DataTLB,
+        }
+    }
+}
+
 impl fmt::Display for CacheType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -148,7 +164,10 @@ pub struct CacheDescription {
 
 impl Ord for CacheDescription {
     fn cmp(&self, other: &Self) -> Ordering {
-        let mut ord: Ordering = self.cachetype.cmp(&other.cachetype);
+        let mut ord: Ordering = self
+            .cachetype
+            .broad_type()
+            .cmp(&other.cachetype.broad_type());
         if ord == Ordering::Equal {
             ord = self.level.cmp(&other.level);
         }
