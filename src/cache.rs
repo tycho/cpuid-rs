@@ -3,6 +3,7 @@
 use modular_bitfield::prelude::*;
 use std::cmp::Ordering;
 use std::fmt;
+use log::*;
 use textwrap::indent;
 
 #[cfg(feature = "legacy-cache-descriptors")]
@@ -194,6 +195,12 @@ impl PartialEq for CacheDescription {
 
 #[derive(Debug)]
 pub struct CacheVec(pub Vec<CacheDescription>);
+
+impl CacheVec {
+    pub fn new() -> CacheVec {
+        CacheVec(vec![])
+    }
+}
 
 fn size_str(kb: u32, cachetype: CacheType) -> String {
     if cachetype == CacheType::Trace {
@@ -457,6 +464,8 @@ fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec)
             false => 1,
         };
 
+        debug!("walk_amd_cache_extended() found cache {:?}", desc);
+
         out.0.push(desc);
 
         subleaf += 1;
@@ -492,14 +501,18 @@ fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) 
             let regbytes = raw.output.register(register).to_le_bytes();
             let cache = L1CacheDesc::from_bytes(regbytes);
 
-            out.0.push(CacheDescription {
-                level: level.clone(),
-                cachetype: cachetype.clone(),
-                associativity: CacheAssociativity::from_identifier(cache.associativity()),
-                size: cache.size() as u32,
-                linesize: cache.linesize() as u16,
-                ..Default::default()
-            });
+            if cache.size() != 0 {
+                let desc = CacheDescription {
+                    level: level.clone(),
+                    cachetype: cachetype.clone(),
+                    associativity: CacheAssociativity::from_identifier(cache.associativity()),
+                    size: cache.size() as u32,
+                    linesize: cache.linesize() as u16,
+                    ..Default::default()
+                };
+                debug!("walk_amd_cache_legacy() found L1 cache: {:?}", desc);
+                out.0.push(desc);
+            }
         }
     }
 
@@ -526,7 +539,7 @@ fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) 
     if let Some(raw) = cpu.get_subleaf(0x8000_0006, 0) {
         let l2cache = L2CacheDesc::from_bytes(raw.output.ecx.to_le_bytes());
         if l2cache.size() != 0 {
-            out.0.push(CacheDescription {
+            let desc = CacheDescription {
                 level: CacheLevel::L2,
                 cachetype: CacheType::Unified,
                 associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
@@ -535,7 +548,9 @@ fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) 
                 size: l2cache.size() as u32,
                 linesize: l2cache.linesize() as u16,
                 ..Default::default()
-            });
+            };
+            debug!("walk_amd_cache_legacy() found L2 cache: {:?}", desc);
+            out.0.push(desc);
         }
 
         let l3cache = L3CacheDesc::from_bytes(raw.output.edx.to_le_bytes());
@@ -548,7 +563,7 @@ fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) 
             {
                 l3size /= 2;
             }
-            out.0.push(CacheDescription {
+            let desc = CacheDescription {
                 level: CacheLevel::L3,
                 cachetype: CacheType::Unified,
                 associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
@@ -557,7 +572,9 @@ fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) 
                 size: l3size,
                 linesize: l3cache.linesize() as u16,
                 ..Default::default()
-            });
+            };
+            debug!("walk_amd_cache_legacy() found L3 cache: {:?}", desc);
+            out.0.push(desc);
         }
     }
 }
@@ -603,24 +620,28 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
             let tlb = L1TlbDesc::from_bytes(regbytes);
 
             if tlb.dtlb_entries() > 0 {
-                out.0.push(CacheDescription {
+                let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
                     associativity: CacheAssociativity::from_identifier(tlb.dtlb_associativity()),
                     size: tlb.dtlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
-                });
+                };
+                debug!("walk_amd_tlb() found L1 dtlb {:?}", desc);
+                out.0.push(desc);
             }
             if tlb.itlb_entries() > 0 {
-                out.0.push(CacheDescription {
+                let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
                     associativity: CacheAssociativity::from_identifier(tlb.itlb_associativity()),
                     size: tlb.itlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
-                });
+                };
+                debug!("walk_amd_tlb() found L1 itlb {:?}", desc);
+                out.0.push(desc);
             }
         }
     }
@@ -648,7 +669,7 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
             let tlb = L2TlbDesc::from_bytes(regbytes);
 
             if tlb.dtlb_entries() > 0 {
-                out.0.push(CacheDescription {
+                let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
                     associativity: CacheAssociativity::from_identifier(
@@ -657,10 +678,12 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
                     size: tlb.dtlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
-                });
+                };
+                debug!("walk_amd_tlb() found L2 dtlb {:?}", desc);
+                out.0.push(desc);
             }
             if tlb.itlb_entries() > 0 {
-                out.0.push(CacheDescription {
+                let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
                     associativity: CacheAssociativity::from_identifier(
@@ -669,7 +692,9 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
                     size: tlb.itlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
-                });
+                };
+                debug!("walk_amd_tlb() found L2 itlb {:?}", desc);
+                out.0.push(desc);
             }
         }
     }
@@ -743,7 +768,7 @@ fn walk_intel_dcp(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
             associativity_type = CacheAssociativityType::DirectMapped;
         }
 
-        out.0.push(CacheDescription {
+        let desc = CacheDescription {
             size: ((ebx.associativity() as u32 + 1)
                 * (ebx.partitions() as u32 + 1)
                 * (ebx.linesize() as u32 + 1)
@@ -785,7 +810,11 @@ fn walk_intel_dcp(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
             },
 
             ..Default::default()
-        });
+        };
+
+        debug!("walk_intel_dcp() found cache {:?}", desc);
+
+        out.0.push(desc);
 
         subleaf += 1;
     }
@@ -849,7 +878,7 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
             // DCP leaf.
             retval = true;
 
-            out.0.push(CacheDescription {
+            let desc = CacheDescription {
                 size: ecx.sets(),
 
                 level: match edx.level() {
@@ -895,7 +924,9 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
                 },
 
                 ..Default::default()
-            });
+            };
+            debug!("walk_intel_dat() found TLB {:?}", desc);
+            out.0.push(desc);
         }
 
         subleaf += 1;
@@ -920,6 +951,7 @@ fn walk_intel_legacy_cache(
         for descriptor in bytes.iter() {
             if let Some(desc) = lookup_cache_descriptor(*descriptor) {
                 if filter.contains(&desc.cachetype) {
+                    debug!("walk_intel_cache_legacy() found {:?}", desc);
                     out.0.push(desc);
                 }
             } else {
@@ -928,43 +960,50 @@ fn walk_intel_legacy_cache(
                 match descriptor {
                     0x63 => {
                         if filter.contains(&CacheType::DataTLB) {
-                            out.0.push(CacheDescription {
+                            let mut entries = CacheVec::new();
+                            entries.0.push(CacheDescription {
                                 cachetype: CacheType::DataTLB,
                                 size: 32,
                                 flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
-                            out.0.push(CacheDescription {
+                            entries.0.push(CacheDescription {
                                 cachetype: CacheType::DataTLB,
                                 size: 4,
                                 flags: CacheFlags::new().with_pages_1g(true),
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
+                            debug!("walk_intel_cache_legacy() found {:?}", entries);
+                            out.0.append(&mut entries.0);
                         }
                     }
                     0xB1 => {
                         if filter.contains(&CacheType::CodeTLB) {
-                            out.0.push(CacheDescription {
+                            let mut entries = CacheVec::new();
+                            entries.0.push(CacheDescription {
                                 cachetype: CacheType::CodeTLB,
                                 size: 8,
                                 flags: CacheFlags::new().with_pages_2m(true),
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
-                            out.0.push(CacheDescription {
+                            entries.0.push(CacheDescription {
                                 cachetype: CacheType::CodeTLB,
                                 size: 4,
                                 flags: CacheFlags::new().with_pages_4m(true),
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
+                            debug!("walk_intel_cache_legacy() found {:?}", entries);
+                            out.0.append(&mut entries.0);
                         }
                     }
                     0xC3 => {
                         if filter.contains(&CacheType::SharedTLB) {
-                            out.0.push(CacheDescription {
+                            let mut entries = CacheVec::new();
+                            entries.0.push(CacheDescription {
                                 cachetype: CacheType::SharedTLB,
                                 level: CacheLevel::L2,
                                 size: 1536,
@@ -972,7 +1011,7 @@ fn walk_intel_legacy_cache(
                                 associativity: CacheAssociativity::from_identifier(0x06),
                                 ..Default::default()
                             });
-                            out.0.push(CacheDescription {
+                            entries.0.push(CacheDescription {
                                 cachetype: CacheType::SharedTLB,
                                 level: CacheLevel::L2,
                                 size: 16,
@@ -980,13 +1019,14 @@ fn walk_intel_legacy_cache(
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
+                            debug!("walk_intel_cache_legacy() found {:?}", entries);
+                            out.0.append(&mut entries.0);
                         }
                     }
                     _ => {}
                 }
             }
         }
-        out.0.sort();
     }
 }
 
@@ -1000,6 +1040,7 @@ fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 CacheType::Unified,
                 CacheType::Trace,
             ];
+            debug!("walk_intel_legacy_cache() for caches");
             walk_intel_legacy_cache(system, cpu, out, &cache_types);
         }
     }
@@ -1016,6 +1057,7 @@ fn walk_intel_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 CacheType::LoadOnlyTLB,
                 CacheType::StoreOnlyTLB,
             ];
+            debug!("walk_intel_legacy_cache() for TLBs");
             walk_intel_legacy_cache(system, cpu, out, &cache_types);
         }
     }
@@ -1030,5 +1072,6 @@ pub fn describe_caches(system: &System, cpu: &Processor) -> CacheVec {
     let mut caches: CacheVec = CacheVec(vec![]);
     walk_amd(system, cpu, &mut caches);
     walk_intel(system, cpu, &mut caches);
+    caches.0.sort();
     caches
 }

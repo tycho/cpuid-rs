@@ -63,6 +63,8 @@ fn main() {
         cpu_end = cpu_index as u32;
     }
 
+    env_logger::init();
+
     let system = match matches.opt_str("file") {
         Some(filename) => System::from_file(&filename).unwrap(),
         _ => System::from_local(),
