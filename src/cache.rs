@@ -297,19 +297,19 @@ impl CacheDescription {
         // e.g. L1 code TLB: 4KB pages
         write!(
             f,
-            "{: >17}: {} pages\n",
+            "{: >17}: {} pages, ",
             first_letter_to_uppercase(cachename),
             pagetypes_str(&self.flags)
         )?;
         // e.g. 4 entries
-        write!(f, "{: >19}{} entries\n", "", self.size)?;
+        write!(f, "{} entries, ", self.size)?;
         // e.g. 8-way set associative
-        write!(f, "{: >19}{}\n", "", self.associativity)?;
+        write!(f, "{}", self.associativity)?;
         if self.max_threads_sharing > 0 {
             // e.g. Shared by max 8 threads
             write!(
                 f,
-                "{: >19}Shared by max {} threads\n",
+                "\n{: >19}Shared by max {} threads",
                 "", self.max_threads_sharing
             )?;
         }
