@@ -349,6 +349,26 @@ impl fmt::Display for CacheVec {
     }
 }
 
+fn translate_amd_l2_associativity(raw: u8) -> u8 {
+    match raw {
+        0x0 => 0x0,
+        0x1 => 0x1,
+        0x2 => 0x2,
+        0x3 => 0x3,
+        0x4 => 0x4,
+        0x5 => 0x6,
+        0x6 => 0x8,
+        0x8 => 0x10,
+        0xA => 0x20,
+        0xB => 0x30,
+        0xC => 0x40,
+        0xD => 0x60,
+        0xE => 0x80,
+        0xF => 0xFF,
+        _ => 0x0,
+    }
+}
+
 fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
     #[bitfield(bits = 32)]
     struct EaxCache {
@@ -445,8 +465,101 @@ fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec)
     true
 }
 
-fn walk_amd_cache_legacy(_system: &System, _cpu: &Processor, _out: &mut CacheVec) {
-    // TODO
+fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) {
+    // Read from:
+    // AMD L1 cache features (0x8000_0005)
+    // AMD L2 cache features (0x8000_0006)
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct L1CacheDesc {
+        linesize: u8,
+        linespertag: u8,
+        associativity: u8,
+        size: u8,
+    }
+
+    if let Some(raw) = cpu.get_subleaf(0x8000_0005, 0) {
+        let level = CacheLevel::L1;
+
+        for register in vec![RegisterName::ECX, RegisterName::EDX] {
+            let cachetype = match register {
+                RegisterName::ECX => CacheType::Data,
+                RegisterName::EDX => CacheType::Code,
+                _ => panic!("Invalid register name!"),
+            };
+
+            let regbytes = raw.output.register(register).to_le_bytes();
+            let cache = L1CacheDesc::from_bytes(regbytes);
+
+            out.0.push(CacheDescription {
+                level: level.clone(),
+                cachetype: cachetype.clone(),
+                associativity: CacheAssociativity::from_identifier(cache.associativity()),
+                size: cache.size() as u32,
+                linesize: cache.linesize() as u16,
+                ..Default::default()
+            });
+        }
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct L2CacheDesc {
+        linesize: u8,
+        linespertag: B4,
+        associativity: B4,
+        size: u16,
+    }
+
+    #[bitfield(bits = 32)]
+    #[derive(Debug)]
+    struct L3CacheDesc {
+        linesize: B8,
+        linespertag: B4,
+        associativity: B4,
+        #[skip]
+        __: B2,
+        size: B14,
+    }
+
+    if let Some(raw) = cpu.get_subleaf(0x8000_0006, 0) {
+        let l2cache = L2CacheDesc::from_bytes(raw.output.ecx.to_le_bytes());
+        if l2cache.size() != 0 {
+            out.0.push(CacheDescription {
+                level: CacheLevel::L2,
+                cachetype: CacheType::Unified,
+                associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
+                    l2cache.associativity(),
+                )),
+                size: l2cache.size() as u32,
+                linesize: l2cache.linesize() as u16,
+                ..Default::default()
+            });
+        }
+
+        let l3cache = L3CacheDesc::from_bytes(raw.output.edx.to_le_bytes());
+        if l3cache.size() != 0 {
+            let mut l3size: u32 = l3cache.size() as u32 * 512;
+            if l3cache.size() == 0x0003
+                || (l3cache.size() >= 0x0005 && l3cache.size() <= 0x0007)
+                || (l3cache.size() >= 0x0009 && l3cache.size() <= 0x000F)
+                || (l3cache.size() >= 0x0011 && l3cache.size() <= 0x001F)
+            {
+                l3size /= 2;
+            }
+            out.0.push(CacheDescription {
+                level: CacheLevel::L3,
+                cachetype: CacheType::Unified,
+                associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
+                    l3cache.associativity(),
+                )),
+                size: l3size,
+                linesize: l3cache.linesize() as u16,
+                ..Default::default()
+            });
+        }
+    }
 }
 
 fn walk_amd_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
@@ -459,26 +572,6 @@ fn walk_amd_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // to use Extended Cache Topology wherever possible.
     if !walk_amd_cache_extended(system, cpu, out) {
         walk_amd_cache_legacy(system, cpu, out);
-    }
-}
-
-fn translate_amd_l2_tlb_associativity(raw: u8) -> u8 {
-    match raw {
-        0x0 => 0x0,
-        0x1 => 0x1,
-        0x2 => 0x2,
-        0x3 => 0x3,
-        0x4 => 0x4,
-        0x5 => 0x6,
-        0x6 => 0x8,
-        0x8 => 0x10,
-        0xA => 0x20,
-        0xB => 0x30,
-        0xC => 0x40,
-        0xD => 0x60,
-        0xE => 0x80,
-        0xF => 0xFF,
-        _ => 0x0,
     }
 }
 
@@ -559,7 +652,7 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
                     associativity: CacheAssociativity::from_identifier(
-                        translate_amd_l2_tlb_associativity(tlb.dtlb_associativity()),
+                        translate_amd_l2_associativity(tlb.dtlb_associativity()),
                     ),
                     size: tlb.dtlb_entries() as u32,
                     flags: cacheflags.clone(),
@@ -571,7 +664,7 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
                     associativity: CacheAssociativity::from_identifier(
-                        translate_amd_l2_tlb_associativity(tlb.itlb_associativity()),
+                        translate_amd_l2_associativity(tlb.itlb_associativity()),
                     ),
                     size: tlb.itlb_entries() as u32,
                     flags: cacheflags.clone(),
