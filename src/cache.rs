@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_attributes)]
+#![allow(dead_code)]
 
 use modular_bitfield::prelude::*;
 use std::cmp::Ordering;
