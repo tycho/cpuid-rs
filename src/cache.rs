@@ -244,7 +244,7 @@ impl CacheDescription {
             // e.g. 8 x 48KB L1 data cache
             write!(
                 f,
-                "{: >2} x {: >7} {: <2?} {: <}\n",
+                "{: >2} x {: >7} {: <2?} {: <}",
                 self.instances,
                 size_str(self.size, self.cachetype),
                 self.level,
@@ -254,7 +254,7 @@ impl CacheDescription {
             // e.g. 48KB L1 data cache
             write!(
                 f,
-                "{: >5}{: >7} {: <2?} {: <}\n",
+                "{: >5}{: >7} {: <2?} {: <}",
                 "",
                 size_str(self.size, self.cachetype),
                 self.level,
@@ -262,11 +262,12 @@ impl CacheDescription {
             )?;
         }
         // e.g. 8-way set associative
-        write!(f, "{: >13}{}\n", "", self.associativity)?;
+        write!(f, ", {}", self.associativity)?;
         if self.cachetype != CacheType::Trace {
             // e.g. 64 byte line size
-            write!(f, "{: >13}{} byte line size\n", "", self.linesize)?;
+            write!(f, ", {} byte line size", self.linesize)?;
         }
+        write!(f, "\n")?;
         if self.flags.ecc() {
             write!(f, "{: >13}ECC\n", "")?;
         }
