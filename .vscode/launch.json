@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "gdb",
+            "request": "launch",
+            "name": "decode (Debug)",
+            "target": "${workspaceRoot}/target/debug/decode",
+            "cwd": "${workspaceRoot}",
+            "env": {"RUST_LOG": "debug"}
+        },
+        {
+            "type": "gdb",
+            "request": "launch",
+            "name": "dump (Debug)",
+            "target": "${workspaceRoot}/target/debug/dump",
+            "cwd": "${workspaceRoot}",
+            "env": {"RUST_LOG": "debug"}
+        }
+    ]
+}

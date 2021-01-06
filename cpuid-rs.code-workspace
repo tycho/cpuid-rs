@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"rust.racer_completion": false,
+		"files.exclude": {
+			"**/.git": true,
+			"**/.gitignore": true,
+			"Cargo.lock": true
+		}
+	}
+}
