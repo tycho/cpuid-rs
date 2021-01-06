@@ -461,6 +461,26 @@ fn walk_amd_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     }
 }
 
+fn translate_amd_l2_tlb_associativity(raw: u8) -> u8 {
+    match raw {
+        0x0 => 0x0,
+        0x1 => 0x1,
+        0x2 => 0x2,
+        0x3 => 0x3,
+        0x4 => 0x4,
+        0x5 => 0x6,
+        0x6 => 0x8,
+        0x8 => 0x10,
+        0xA => 0x20,
+        0xB => 0x30,
+        0xC => 0x40,
+        0xD => 0x60,
+        0xE => 0x80,
+        0xF => 0xFF,
+        _ => 0x0,
+    }
+}
+
 fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
     // Read from:
     // AMD L1 cache features (0x8000_0005)
@@ -537,17 +557,9 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
                 out.0.push(CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
-                    associativity: match tlb.dtlb_associativity() {
-                        0x4 => CacheAssociativity {
-                            mapping: CacheAssociativityType::NWay,
-                            ways: 4,
-                        },
-                        0x6 => CacheAssociativity {
-                            mapping: CacheAssociativityType::NWay,
-                            ways: 8,
-                        },
-                        _ => CacheAssociativity::default(),
-                    },
+                    associativity: CacheAssociativity::from_identifier(
+                        translate_amd_l2_tlb_associativity(tlb.dtlb_associativity()),
+                    ),
                     size: tlb.dtlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
@@ -557,17 +569,9 @@ fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
                 out.0.push(CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
-                    associativity: match tlb.dtlb_associativity() {
-                        0x4 => CacheAssociativity {
-                            mapping: CacheAssociativityType::NWay,
-                            ways: 4,
-                        },
-                        0x6 => CacheAssociativity {
-                            mapping: CacheAssociativityType::NWay,
-                            ways: 8,
-                        },
-                        _ => CacheAssociativity::default(),
-                    },
+                    associativity: CacheAssociativity::from_identifier(
+                        translate_amd_l2_tlb_associativity(tlb.itlb_associativity()),
+                    ),
                     size: tlb.itlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
