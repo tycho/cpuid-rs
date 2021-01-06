@@ -5,8 +5,17 @@ authors = ["Steven Noonan <steven@uplinklabs.net>"]
 edition = "2018"
 
 [features]
-default = ["legacy-cache-descriptors"]
+default = ["legacy-cache-descriptors", "build-binaries"]
+build-binaries = ["getopts"]
 legacy-cache-descriptors = []
+
+[[bin]]
+name = "dump"
+required-features = ["build-binaries"]
+
+[[bin]]
+name = "decode"
+required-features = ["build-binaries"]
 
 [profile.release]
 opt-level = "s"
@@ -17,7 +26,7 @@ codegen-units = 1
 modular-bitfield = "^0"
 num_cpus = "^1"
 affinity = "^0"
-getopts = "^0"
+getopts = { version = "^0", optional = true }
 
 [dependencies.scan_fmt]
 version = "^0"
