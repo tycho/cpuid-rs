@@ -15,8 +15,14 @@ codegen-units = 1
 
 [dependencies]
 modular-bitfield = "^0"
-clap = "^2"
 num_cpus = "^1"
 affinity = "^0"
-scan_fmt = { version = "^0", default-features = false }
-textwrap = "^0"
+getopts = "^0"
+
+[dependencies.scan_fmt]
+version = "^0"
+default-features = false
+
+[dependencies.textwrap]
+version = "^0"
+default-features = false

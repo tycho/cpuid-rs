@@ -1,36 +1,35 @@
-use clap::{value_t, App, Arg};
+use getopts::Options;
+use std::env;
 
 use cpuid::cpuid::System;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+fn print_usage(program: &str, opts: Options)
+{
+    let brief = format!("Usage: {} [options]", program);
+    print!("{}", opts.usage(&brief));
+}
 
 fn main() {
-    let matches = App::new("CPUID decoding tool")
-        .version(VERSION)
-        .author("Steven Noonan <steven@uplinklabs.net>")
-        .about("Decodes known valid CPUID leaves to stdout")
-        .arg(
-            Arg::with_name("cpu")
-                .short("c")
-                .long("cpu")
-                .value_name("INDEX")
-                .help("Which CPU to decode CPUID information from")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("file")
-                .short("f")
-                .long("file")
-                .value_name("FILE")
-                .help("Parse and import dump file instead of reading from local CPUs")
-                .takes_value(true),
-        )
-        .get_matches();
+    let args: Vec<String> = env::args().collect();
+    let program = args[0].clone();
+
+    let mut opts = Options::new();
+    opts.optopt("f", "file", "Parse and import dump file instead of reading from local CPUs", "FILE");
+    opts.optopt("c", "cpu", "Which CPU to decode CPUID information from", "INDEX");
+    opts.optflag("h", "help", "Print this help text");
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => { m }
+        Err(f) => { panic!(f.to_string()) }
+    };
+    if matches.opt_present("h") {
+        print_usage(&program, opts);
+        return;
+    }
 
     // TODO: This kinda sucks because it will silently eat bogus values. We want
     // it to eventually accept integer values (21), integer ranges (21-35),
     // integer lists (21,22,23), or the string "all" (or similar).
-    let cpu_index = value_t!(matches, "cpu", i32).unwrap_or(0);
+    let cpu_index: i32 = matches.opt_str("cpu").unwrap_or("0".to_string()).parse::<i32>().unwrap_or(0);
 
     let mut cpu_start: u32 = 0;
     let mut cpu_end: u32 = num_cpus::get() as u32 - 1;
@@ -49,8 +48,8 @@ fn main() {
         cpu_end = cpu_index as u32;
     }
 
-    let system = match matches.value_of("file") {
-        Some(filename) => System::from_file(filename).unwrap(),
+    let system = match matches.opt_str("file") {
+        Some(filename) => System::from_file(&filename).unwrap(),
         _ => System::from_local(),
     };
 
