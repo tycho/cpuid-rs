@@ -27,8 +27,12 @@ modular-bitfield = "^0"
 num_cpus = "^1"
 affinity = "^0"
 log = { version = "^0", features = ["release_max_level_off"] }
-env_logger = "^0"
 getopts = { version = "^0", optional = true }
+
+[dependencies.env_logger]
+version = "^0"
+default-features = false
+features = ["termcolor", "atty", "humantime"]
 
 [dependencies.scan_fmt]
 version = "^0"
