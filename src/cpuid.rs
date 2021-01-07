@@ -61,7 +61,7 @@ fn squeeze_str(input: String) -> String {
     let mut last_was_space = false;
     for inchar in input.trim().chars() {
         if inchar == '\0' {
-            break
+            break;
         }
         if inchar.is_whitespace() {
             if !last_was_space {
