@@ -70,12 +70,14 @@ fn main() {
         _ => System::from_local(),
     };
 
-    for (cpu, _snapshot) in system.cpus.iter() {
-        if *cpu < cpu_start || *cpu > cpu_end {
+    for processor in system.cpus.iter() {
+        if processor.index < cpu_start || processor.index > cpu_end {
             continue;
         }
-        println!("CPU {}:", cpu);
+        println!("CPU {}:", processor.index);
     }
     //println!("{:#?}", system.caches());
-    println!("{}", system.caches());
+    println!("{: >16}: {}", "Vendor ID", system.vendor_string);
+    println!("{: >16}: {}", "Processor Name", system.name_string);
+    println!("\n{}", system.caches);
 }

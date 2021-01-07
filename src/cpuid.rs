@@ -1,3 +1,4 @@
+use log::*;
 use scan_fmt::*;
 use std::fmt;
 use std::fs::File;
@@ -32,7 +33,7 @@ impl LeafID {
     }
 }
 
-pub fn bytes_to_ascii(bytes: Vec<u8>) -> String {
+fn bytes_to_ascii_dump(bytes: Vec<u8>) -> String {
     let mut string = String::new();
     for byte in bytes.iter() {
         if *byte > 31 && *byte < 127 {
@@ -42,6 +43,35 @@ pub fn bytes_to_ascii(bytes: Vec<u8>) -> String {
         }
     }
     string
+}
+
+fn bytes_to_ascii(bytes: Vec<u8>) -> String {
+    let mut string = String::new();
+    for byte in bytes.iter() {
+        let chr = *byte as char;
+        if chr.is_ascii() {
+            string.push(chr);
+        }
+    }
+    string
+}
+
+fn squeeze_str(input: String) -> String {
+    let mut output = String::new();
+    let mut last_was_space = false;
+    for inchar in input.trim().chars() {
+        if inchar.is_whitespace() {
+            if !last_was_space {
+                output.push(inchar);
+                last_was_space = true;
+            }
+        } else if !inchar.is_control() {
+            output.push(inchar);
+            last_was_space = false;
+        }
+    }
+    output.truncate(output.trim_end().len());
+    output
 }
 
 impl Registers {
@@ -72,7 +102,7 @@ impl Registers {
                 bytes.push(*byte);
             }
         }
-        bytes_to_ascii(bytes)
+        bytes_to_ascii_dump(bytes)
     }
 }
 
@@ -130,15 +160,15 @@ impl RawCPUIDResponse {
 
 #[derive(Debug, Clone)]
 pub struct Processor {
+    pub index: u32,
     pub leaves: Vec<RawCPUIDResponse>,
-    pub vendor_string: String,
 }
 
 impl Processor {
     pub fn new() -> Processor {
         Processor {
+            index: 0,
             leaves: vec![],
-            vendor_string: "".to_string(),
         }
     }
 
@@ -149,21 +179,7 @@ impl Processor {
         processor
     }
 
-    fn fill_vendor(&mut self) {
-        if let Some(leaf) = self.get_subleaf(0x0000_0000, 0x0) {
-            let mut bytes: Vec<u8> = vec![];
-            for register in [leaf.output.ebx, leaf.output.edx, leaf.output.ecx].iter() {
-                for byte in register.to_le_bytes().iter() {
-                    bytes.push(*byte);
-                }
-            }
-            self.vendor_string = bytes_to_ascii(bytes);
-        }
-    }
-
-    fn fill(&mut self) {
-        self.fill_vendor();
-    }
+    fn fill(&mut self) {}
 
     pub fn get_subleaf(&self, leaf: u32, subleaf: u32) -> Option<&RawCPUIDResponse> {
         for result in self.leaves.iter() {
@@ -207,12 +223,24 @@ impl Processor {
 }
 
 pub struct System {
-    pub cpus: Vec<(u32, Processor)>,
+    pub cpus: Vec<Processor>,
+    pub vendor_string: String,
+    pub name_string: String,
+    pub caches: CacheVec,
 }
 
 impl System {
+    fn new() -> System {
+        System {
+            cpus: vec![],
+            caches: CacheVec::new(),
+            vendor_string: String::new(),
+            name_string: String::new(),
+        }
+    }
+
     pub fn from_local() -> System {
-        let mut system: System = System { cpus: vec![] };
+        let mut system: System = System::new();
         let cpu_start: u32 = 0;
         let cpu_end: u32 = num_cpus::get() as u32 - 1;
 
@@ -226,10 +254,14 @@ impl System {
             // isn't any thread affinity API there.
             affinity::set_thread_affinity(mask).unwrap();
 
-            system.cpus.push((cpu, Processor::from_local()));
+            let mut processor = Processor::from_local();
+            processor.index = cpu;
+            system.cpus.push(processor);
         }
 
         affinity::set_thread_affinity(old_affinity).unwrap();
+
+        system.fill();
 
         system
     }
@@ -238,7 +270,7 @@ impl System {
         let file = File::open(filename)?;
         let reader = BufReader::new(file);
 
-        let mut system: System = System { cpus: vec![] };
+        let mut system: System = System::new();
         let mut processor: Processor = Processor::new();
         let mut cpu_index: i32 = -1;
 
@@ -261,7 +293,8 @@ impl System {
             } else if let Ok(sc_index) = scan_fmt!(&line, "CPU {}:", i32) {
                 if cpu_index >= 0 {
                     processor.fill();
-                    system.cpus.push((cpu_index as u32, processor));
+                    processor.index = cpu_index as u32;
+                    system.cpus.push(processor);
                     processor = Processor::new();
                 }
                 cpu_index = sc_index;
@@ -270,14 +303,61 @@ impl System {
 
         if cpu_index >= 0 {
             processor.fill();
-            system.cpus.push((cpu_index as u32, processor));
+            processor.index = cpu_index as u32;
+            system.cpus.push(processor);
         }
+
+        system.fill();
 
         Ok(system)
     }
 
-    pub fn caches(&self) -> CacheVec {
-        describe_caches(self, &self.cpus[0].1)
+    fn fill(&mut self) {
+        // Order is important. Feature/cache decoding depends a lot on the vendor string.
+        self.fill_vendor();
+        self.fill_processor_name();
+        self.fill_caches();
+    }
+
+    fn fill_caches(&mut self) {
+        self.caches = describe_caches(self, &self.cpus[0])
+    }
+
+    fn fill_vendor(&mut self) {
+        if let Some(leaf) = self.cpus[0].get_subleaf(0x0000_0000, 0x0) {
+            let mut bytes: Vec<u8> = vec![];
+            for register in [leaf.output.ebx, leaf.output.edx, leaf.output.ecx].iter() {
+                for byte in register.to_le_bytes().iter() {
+                    bytes.push(*byte);
+                }
+            }
+            self.vendor_string = bytes_to_ascii(bytes);
+            debug!("decoded vendor string: {:#?}", self.vendor_string);
+        }
+    }
+
+    fn fill_processor_name(&mut self) {
+        let mut bytes: Vec<u8> = vec![];
+        for leaf_id in [0x8000_0002, 0x8000_0003, 0x8000_0004].iter() {
+            if let Some(leaf) = self.cpus[0].get_subleaf(*leaf_id, 0x0) {
+                for register in [
+                    leaf.output.eax,
+                    leaf.output.ebx,
+                    leaf.output.ecx,
+                    leaf.output.edx,
+                ]
+                .iter()
+                {
+                    for byte in register.to_le_bytes().iter() {
+                        bytes.push(*byte);
+                    }
+                }
+            }
+        }
+        if bytes.len() == 3 * 4 * 4 {
+            self.name_string = squeeze_str(bytes_to_ascii(bytes));
+            debug!("decoded name string: {:#?}", self.name_string);
+        }
     }
 }
 

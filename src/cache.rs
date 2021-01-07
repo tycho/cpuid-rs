@@ -377,7 +377,7 @@ fn translate_amd_l2_associativity(raw: u8) -> u8 {
 }
 
 fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
-    if cpu.vendor_string != "AuthenticAMD" {
+    if system.vendor_string != "AuthenticAMD" {
         debug!("walk_amd_cache_extended() skipped on non-AMD CPU");
         return false;
     }
@@ -479,12 +479,12 @@ fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec)
     true
 }
 
-fn walk_amd_cache_legacy(_system: &System, cpu: &Processor, out: &mut CacheVec) {
+fn walk_amd_cache_legacy(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // Read from:
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
 
-    if cpu.vendor_string != "AuthenticAMD" {
+    if system.vendor_string != "AuthenticAMD" {
         debug!("walk_amd_cache_legacy() skipped on non-AMD CPU");
         return;
     }
@@ -602,12 +602,12 @@ fn walk_amd_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     }
 }
 
-fn walk_amd_tlb(_system: &System, cpu: &Processor, out: &mut CacheVec) {
+fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // Read from:
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
 
-    if cpu.vendor_string != "AuthenticAMD" {
+    if system.vendor_string != "AuthenticAMD" {
         debug!("walk_amd_tlb() skipped on non-AMD CPU");
         return;
     }
