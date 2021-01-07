@@ -71,12 +71,12 @@ impl fmt::Display for CacheType {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 pub enum CacheLevel {
-    Unknown = 0,
-    L0 = 1,
-    L1 = 2,
-    L2 = 3,
-    L3 = 4,
-    L4 = 5,
+    L0 = 0,
+    L1 = 1,
+    L2 = 2,
+    L3 = 3,
+    L4 = 4,
+    Unknown = 5,
 }
 
 impl Default for CacheLevel {
