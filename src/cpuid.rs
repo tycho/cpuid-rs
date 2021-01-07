@@ -73,6 +73,10 @@ fn squeeze_str(input: String) -> String {
             last_was_space = false;
         }
     }
+
+    // We may have pushed a single space as the last character, truncate that away.
+    output.truncate(output.trim_end().len());
+
     output
 }
 
