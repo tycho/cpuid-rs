@@ -718,6 +718,48 @@ fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
             }
         }
     }
+
+    if let Some(raw) = cpu.get_subleaf(0x8000_0019, 0) {
+        for register in vec![RegisterName::EBX, RegisterName::EAX] {
+            let level = match register {
+                RegisterName::EAX => CacheLevel::L1,
+                RegisterName::EBX => CacheLevel::L2,
+                _ => panic!("Invalid register name!"),
+            };
+
+            let regbytes = raw.output.register(register).to_le_bytes();
+            let tlb = L2TlbDesc::from_bytes(regbytes);
+
+            if tlb.dtlb_entries() > 0 {
+                let desc = CacheDescription {
+                    level: level.clone(),
+                    cachetype: CacheType::DataTLB,
+                    associativity: CacheAssociativity::from_identifier(
+                        translate_amd_l2_associativity(tlb.dtlb_associativity()),
+                    ),
+                    size: tlb.dtlb_entries() as u32,
+                    flags: CacheFlags::new().with_pages_1g(true),
+                    ..Default::default()
+                };
+                debug!("walk_amd_tlb() found 1G dtlb {:?}", desc);
+                out.0.push(desc);
+            }
+            if tlb.itlb_entries() > 0 {
+                let desc = CacheDescription {
+                    level: level.clone(),
+                    cachetype: CacheType::CodeTLB,
+                    associativity: CacheAssociativity::from_identifier(
+                        translate_amd_l2_associativity(tlb.itlb_associativity()),
+                    ),
+                    size: tlb.itlb_entries() as u32,
+                    flags: CacheFlags::new().with_pages_1g(true),
+                    ..Default::default()
+                };
+                debug!("walk_amd_tlb() found 1G itlb {:?}", desc);
+                out.0.push(desc);
+            }
+        }
+    }
 }
 
 fn walk_amd(system: &System, cpu: &Processor, out: &mut CacheVec) {
