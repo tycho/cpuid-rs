@@ -963,6 +963,8 @@ fn walk_intel_legacy_cache(
         bytes.extend_from_slice(&raw.output.ebx.to_le_bytes());
         bytes.extend_from_slice(&raw.output.ecx.to_le_bytes());
         bytes.extend_from_slice(&raw.output.edx.to_le_bytes());
+        bytes.sort_unstable();
+        bytes.dedup();
         for descriptor in bytes.iter() {
             if let Some(desc) = lookup_cache_descriptor(*descriptor) {
                 if filter.contains(&desc.cachetype) {
