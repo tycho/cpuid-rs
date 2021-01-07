@@ -971,9 +971,13 @@ fn walk_intel_legacy_cache(
         bytes.sort_unstable();
         bytes.dedup();
         for descriptor in bytes.iter() {
+            if *descriptor == 0x00 {
+                // null cache descriptor, not worth logging
+                continue;
+            }
             if let Some(desc) = lookup_cache_descriptor(*descriptor) {
                 if filter.contains(&desc.cachetype) {
-                    debug!("walk_intel_cache_legacy() found {:?}", desc);
+                    debug!("walk_intel_legacy_cache() found {:?}", desc);
                     out.0.push(desc);
                 }
             } else {
@@ -997,7 +1001,7 @@ fn walk_intel_legacy_cache(
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
-                            debug!("walk_intel_cache_legacy() found {:?}", entries);
+                            debug!("walk_intel_legacy_cache() found {:?}", entries);
                             out.0.append(&mut entries.0);
                         }
                     }
@@ -1018,7 +1022,7 @@ fn walk_intel_legacy_cache(
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
-                            debug!("walk_intel_cache_legacy() found {:?}", entries);
+                            debug!("walk_intel_legacy_cache() found {:?}", entries);
                             out.0.append(&mut entries.0);
                         }
                     }
@@ -1041,11 +1045,16 @@ fn walk_intel_legacy_cache(
                                 associativity: CacheAssociativity::from_identifier(0x04),
                                 ..Default::default()
                             });
-                            debug!("walk_intel_cache_legacy() found {:?}", entries);
+                            debug!("walk_intel_legacy_cache() found {:?}", entries);
                             out.0.append(&mut entries.0);
                         }
                     }
-                    _ => {}
+                    _ => {
+                        debug!(
+                            "walk_intel_legacy_cache() found unknown cache descriptor {:0>2x}",
+                            descriptor
+                        );
+                    }
                 }
             }
         }
