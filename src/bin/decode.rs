@@ -2,7 +2,6 @@ use getopts::Options;
 use std::env;
 
 use cpuid::cpuid::System;
-use cpuid::cpuid::VendorMask;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
