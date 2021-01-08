@@ -12,6 +12,7 @@ use crate::cache::{describe_caches, CacheVec};
 use crate::feature::{describe_features, FeatureVec};
 
 #[derive(Debug, Clone, PartialEq)]
+/// Input `eax` and `ecx` values for a single CPUID invocation.
 pub struct LeafID {
     /// Input `eax` value
     pub eax: u32,
@@ -27,6 +28,7 @@ impl LeafID {
 }
 
 #[derive(Debug, Clone)]
+/// Output registers for a single CPUID invocation.
 pub struct Registers {
     pub eax: u32,
     pub ebx: u32,
@@ -45,31 +47,74 @@ pub enum RegisterName {
 }
 
 bitflags! {
+    /// Bitmask for Vendor IDs, used to identify both physical CPU vendors and
+    /// hypervisor vendors.
     pub struct VendorMask: u32 {
+        /// This mask contains no vendor flags.
         const UNKNOWN = 0x0000_0000;
 
+        //
         // Common helper masks
+        //
+
+        /// Mask covering any physical CPU vendor IDs
         const ANY_CPU = 0x0000_00FF;
+
+        /// Mask covering any hypervisor vendor IDs
         const ANY_HYPERVISOR = 0x0000_FF00;
 
+        //
         // One-hot identifiers for CPU vendors
+        //
+
+        /// Vendor flag for `GenuineIntel` CPUs
         const INTEL = 0x0000_0001;
+
+        /// Vendor flag for `AuthenticAMD` CPUs
         const AMD = 0x0000_0002;
+
+        /// Vendor flag for `CentaurHauls` CPUs
         const CENTAUR = 0x0000_0004;
+
+        /// Vendor flag for `CyrixInstead` CPUs
         const CYRIX = 0x0000_0008;
+
+        /// Vendor flag for `GenuineTMx86` CPUs
         const TRANSMETA = 0x0000_0010;
+
+        /// Vendor flag for `HygonGenuine` CPUs
         const HYGON = 0x0000_0020;
 
+        //
         // Common vendor masks
+        //
+
+        /// Mask covering both Intel and AMD CPUs.
         const INTELAMD = 0x0000_0003;
 
+        //
         // One-hot identifiers for hypervisor vendors
+        //
+
+        /// Vendor flag for Microsoft Hyper-V hypervisor
         const HYPERV = 0x0000_0100;
+
+        /// Vendor flag for Linux KVM hypervisor
         const KVM = 0x0000_0200;
+
+        /// Vendor flag for QEMU TCG hypervisor
         const TCG = 0x0000_0400;
+
+        /// Vendor flag for Xen hypervisor
         const XEN = 0x0000_0800;
+
+        /// Vendor flag for Parallels Desktop hypervisor
         const PARALLELS = 0x0000_1000;
+
+        /// Vendor flag for VMware hypervisors
         const VMWARE = 0x0000_2000;
+
+        /// Vendor flag for FreeBSD's byve hypervisor
         const BHYVE = 0x0000_4000;
     }
 }
@@ -202,8 +247,13 @@ pub fn cpuid(input: &LeafID, output: &mut Registers) {
 }
 
 #[derive(Debug, Clone)]
+/// Structure containing a CPUID leaf ID and the output register values for a
+/// single CPUID invocation.
 pub struct RawCPUIDResponse {
+    /// Input leaf ID
     pub input: LeafID,
+
+    /// Output registers.
     pub output: Registers,
 }
 
@@ -288,6 +338,13 @@ impl Signature {
 }
 
 #[derive(Debug, Clone)]
+/// Structure containing CPUID data for a single logical CPU.
+///
+/// Contains the logical CPU index, raw CPUID request/response data, vendor mask,
+/// signature, etc.
+///
+/// More of the decoded data is available in the [System](struct.System.html)
+/// structure.
 pub struct Processor {
     /// Logical index of this CPU on the system.
     pub index: u32,
@@ -436,6 +493,14 @@ impl Processor {
 }
 
 #[derive(Debug)]
+/// Structure containing a snapshot of one or more logical CPUs.
+///
+/// It usually contains CPUID data for all logical CPUs, except on macOS, where
+/// lack of any thread/process affinity APIs makes it impossible to query
+/// anything other than one CPU.
+///
+/// Aside from the raw CPUID data, this structure also contains the decoded
+/// vendor IDs, name string, cache descriptions, feature descriptions, etc.
 pub struct System {
     /// Vector of processors in the system. May only contain one instance if the
     /// platform does not support thread affinity APIs (*COUGH, COUGH* macOS
