@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use log::*;
-use std::fmt;
 use modular_bitfield::prelude::*;
+use std::fmt;
 
 use crate::cpuid::{Processor, System};
 
@@ -16,7 +16,7 @@ pub struct TopologyProp {
 
 impl TopologyProp {
     pub fn new() -> TopologyProp {
-        TopologyProp{
+        TopologyProp {
             mask: 0,
             shift: 0,
             total: 0,
@@ -65,14 +65,18 @@ impl TopologyInferred {
 
 impl fmt::Display for TopologyInferred {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} logical CPUs ({} sockets, {} cores per socket, {} threads per core)",
+        write!(
+            f,
+            "{} logical CPUs ({} sockets, {} cores per socket, {} threads per core)",
             self.sockets * self.cores_per_socket as u32 * self.threads_per_core as u32,
-            self.sockets, self.cores_per_socket, self.threads_per_core)
+            self.sockets,
+            self.cores_per_socket,
+            self.threads_per_core
+        )
     }
 }
 
-fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyProps, TopologyInferred)>
-{
+fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyProps, TopologyInferred)> {
     #[bitfield(bits = 32)]
     struct EaxX2Apic {
         shift: B5,
@@ -102,10 +106,10 @@ fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyPro
 
     if let Some(feature_check) = cpu.get_subleaf(0x0000_000B, 0) {
         if feature_check.output.eax == 0 && feature_check.output.ebx == 0 {
-            return None
+            return None;
         }
     } else {
-        return None
+        return None;
     }
 
     let mut x2apic: TopologyProps = TopologyProps::new();
@@ -130,7 +134,7 @@ fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyPro
                 x2apic.thread.shift = eax.shift();
                 x2apic.thread.mask = !(0xFFFF_FFFF << eax.shift());
                 x2apic.thread.reported = true;
-            },
+            }
 
             // Core level
             2 => {
@@ -143,7 +147,9 @@ fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyPro
                 x2apic.socket.mask = 0xFFFF_FFFF ^ x2apic.core.mask;
             }
 
-            _ => { break; }
+            _ => {
+                break;
+            }
         }
     }
 
@@ -165,7 +171,7 @@ fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyPro
     debug!("Thread {:x?}", x2apic.thread);
 
     if x2apic.core.total == 0 || x2apic.thread.total == 0 {
-        return None
+        return None;
     }
 
     if x2apic.core.total > x2apic.thread.total {
@@ -180,8 +186,7 @@ fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyPro
     Some((x2apic, inferred))
 }
 
-pub(crate) fn describe_topology(system: &mut System)
-{
+pub(crate) fn describe_topology(system: &mut System) {
     if let Some((topo_props, topo)) = describe_topology_cpu(system, &system.cpus[0]) {
         system.topology = topo;
         system.topology_props = topo_props;
