@@ -10,6 +10,7 @@ use std::io::{prelude::*, BufReader};
 
 use crate::cache::{describe_caches, CacheVec};
 use crate::feature::{describe_features, FeatureVec};
+use crate::topology::{describe_topology, TopologyInferred, TopologyProps};
 
 #[derive(Debug, Clone, PartialEq)]
 /// Input `eax` and `ecx` values for a single CPUID invocation.
@@ -367,6 +368,9 @@ pub struct Processor {
 
     /// Describes the processor signature.
     pub signature: Signature,
+
+    /// x2APIC ID, if supported
+    pub x2apic_id: u32,
 }
 
 impl Processor {
@@ -377,6 +381,7 @@ impl Processor {
             leaves: vec![],
             vendor: VendorMask::UNKNOWN,
             signature: Signature::new(),
+            x2apic_id: 0,
         }
     }
 
@@ -451,6 +456,7 @@ impl Processor {
     fn fill(&mut self) {
         self.fill_vendor();
         self.fill_signature();
+        self.fill_x2apic();
     }
 
     fn fill_signature(&mut self) {
@@ -492,6 +498,12 @@ impl Processor {
         }
         debug!("final vendor mask: {:#?}", self.vendor);
     }
+
+    fn fill_x2apic(&mut self) {
+        if let Some(leaf) = self.get_subleaf(0x0000_000B, 0x0) {
+            self.x2apic_id = leaf.output.edx;
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -525,6 +537,12 @@ pub struct System {
 
     /// Vector of all the discovered features in the first processor.
     pub features: FeatureVec,
+
+    /// Inferred CPU topology (cores, threads, sockets)
+    pub topology: TopologyInferred,
+
+    /// Discovered CPU topology metadata
+    pub topology_props: TopologyProps,
 }
 
 impl System {
@@ -536,6 +554,8 @@ impl System {
             name_string: String::new(),
             caches: CacheVec::new(),
             features: FeatureVec::new(),
+            topology: TopologyInferred::new(),
+            topology_props: TopologyProps::new(),
         }
     }
 
@@ -642,6 +662,7 @@ impl System {
         self.fill_processor_name();
         self.fill_caches();
         self.fill_features();
+        self.fill_x2apic();
     }
 
     fn fill_caches(&mut self) {
@@ -671,6 +692,10 @@ impl System {
             self.name_string = squeeze_str(bytes_to_ascii(bytes));
             debug!("decoded name string: {:#?}", self.name_string);
         }
+    }
+
+    fn fill_x2apic(&mut self) {
+        describe_topology(self)
     }
 }
 

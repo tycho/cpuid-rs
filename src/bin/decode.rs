@@ -41,6 +41,9 @@ fn main() {
     println!("{: >16}: {:?}", "Vendor(s)", system.vendor);
     println!("{: >16}: {}", "Processor Name", system.name_string);
     println!("{: >16}: {}", "Signature", system.cpus[0].signature);
+    if system.topology.valid() {
+        println!("{: >16}: {}", "Topology", system.topology);
+    }
     println!("\n{}", system.caches);
     println!("{}", system.features);
 }
