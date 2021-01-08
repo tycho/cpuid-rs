@@ -273,7 +273,7 @@ pub struct Signature {
 }
 impl fmt::Display for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Family {:x}h, Model {:x}h, Stepping {:x}h", self.family, self.model, self.stepping)
+        write!(f, "Family {:X}h, Model {:X}h, Stepping {:X}h", self.family, self.model, self.stepping)
     }
 }
 
