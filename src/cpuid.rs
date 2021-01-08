@@ -143,7 +143,7 @@ impl VendorMask {
 }
 
 fn bytes_to_ascii_dump(bytes: Vec<u8>) -> String {
-    let mut string = String::new();
+    let mut string = String::with_capacity(bytes.len());
     for byte in bytes.iter() {
         if *byte > 31 && *byte < 127 {
             string.push(*byte as char)
@@ -155,7 +155,7 @@ fn bytes_to_ascii_dump(bytes: Vec<u8>) -> String {
 }
 
 fn bytes_to_ascii(bytes: Vec<u8>) -> String {
-    let mut string = String::new();
+    let mut string = String::with_capacity(bytes.len());
     for byte in bytes.iter() {
         let chr = *byte as char;
         if chr.is_ascii() {
@@ -684,13 +684,7 @@ impl fmt::Display for RawCPUIDResponse {
     }
 }
 
-fn call_leaf(out: &mut Vec<RawCPUIDResponse>, leaf: u32, subleaf: u32) {
-    let state = RawCPUIDResponse::invoke(leaf, subleaf);
-    out.push(state);
-}
-
-fn call_leaf_04(out: &mut Vec<RawCPUIDResponse>) {
-    let mut state = RawCPUIDResponse::invoke(0x0000_0004, 0);
+fn call_leaf_04(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     loop {
         out.push(state.clone());
         if state.output.eax & 0xF == 0 {
@@ -700,8 +694,7 @@ fn call_leaf_04(out: &mut Vec<RawCPUIDResponse>) {
     }
 }
 
-fn call_leaf_x2apic(out: &mut Vec<RawCPUIDResponse>, leaf: u32) {
-    let mut state = RawCPUIDResponse::invoke(leaf, 0);
+fn call_leaf_x2apic(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     loop {
         if state.input.ecx > 0 && !(state.output.eax != 0 || state.output.ebx != 0) {
             break;
@@ -711,8 +704,7 @@ fn call_leaf_x2apic(out: &mut Vec<RawCPUIDResponse>, leaf: u32) {
     }
 }
 
-fn call_leaf_0d(out: &mut Vec<RawCPUIDResponse>) {
-    let mut state = RawCPUIDResponse::invoke(0x0000_000D, 0);
+fn call_leaf_0d(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     loop {
         if state.input.ecx > 0
             && !(state.output.eax != 0
@@ -730,8 +722,7 @@ fn call_leaf_0d(out: &mut Vec<RawCPUIDResponse>) {
     }
 }
 
-fn call_leaf_0f(out: &mut Vec<RawCPUIDResponse>) {
-    let mut state = RawCPUIDResponse::invoke(0x0000_000F, 0);
+fn call_leaf_0f(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     let mut max_ecx = 0;
     if (state.output.edx & 0x2) != 0 {
         max_ecx = 1
@@ -745,8 +736,7 @@ fn call_leaf_0f(out: &mut Vec<RawCPUIDResponse>) {
     }
 }
 
-fn call_leaf_10(out: &mut Vec<RawCPUIDResponse>) {
-    let mut state = RawCPUIDResponse::invoke(0x0000_0010, 0);
+fn call_leaf_10(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     let mut max_ecx = 0;
     if (state.output.ebx & 0x2) != 0 {
         max_ecx = 1
@@ -760,10 +750,9 @@ fn call_leaf_10(out: &mut Vec<RawCPUIDResponse>) {
     }
 }
 
-fn call_leaf_12(out: &mut Vec<RawCPUIDResponse>) {
+fn call_leaf_12(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     let feature_check = RawCPUIDResponse::invoke(0x0000_0007, 0);
     let sgx_supported = (feature_check.output.ebx & 0x4) != 0;
-    let mut state = RawCPUIDResponse::invoke(0x0000_0012, 0);
     loop {
         if state.input.ecx > 1 && (state.output.eax & 0xf) == 0 {
             break;
@@ -776,10 +765,9 @@ fn call_leaf_12(out: &mut Vec<RawCPUIDResponse>) {
     }
 }
 
-fn call_leaf_1b(out: &mut Vec<RawCPUIDResponse>) {
+fn call_leaf_1b(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     let feature_check = RawCPUIDResponse::invoke(0x0000_0007, 0);
     let pconfig_supported = (feature_check.output.edx & 0x0004_0000) != 0;
-    let mut state = RawCPUIDResponse::invoke(0x0000_001B, 0);
     loop {
         if state.input.ecx > 0 && (state.output.eax & 0xfff) == 0 {
             break;
@@ -792,8 +780,7 @@ fn call_leaf_1b(out: &mut Vec<RawCPUIDResponse>) {
     }
 }
 
-fn call_leaf_max_ecx(out: &mut Vec<RawCPUIDResponse>, leaf: u32, max_subleaf: u32) {
-    let mut state = RawCPUIDResponse::invoke(leaf, 0);
+fn call_leaf_max_ecx(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse, max_subleaf: u32) {
     loop {
         out.push(state.clone());
         state.next_subleaf();
@@ -803,10 +790,9 @@ fn call_leaf_max_ecx(out: &mut Vec<RawCPUIDResponse>, leaf: u32, max_subleaf: u3
     }
 }
 
-fn call_leaf_ext_1d(out: &mut Vec<RawCPUIDResponse>) {
+fn call_leaf_ext_1d(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     let feature_check = RawCPUIDResponse::invoke(0x8000_0001, 0);
     let ext_topology_supported = (feature_check.output.ecx & 0x0040_0000) != 0;
-    let mut state = RawCPUIDResponse::invoke(0x8000_001D, 0);
     loop {
         if state.input.ecx > 0 && state.output.eax == 0 {
             break;
@@ -819,8 +805,7 @@ fn call_leaf_ext_1d(out: &mut Vec<RawCPUIDResponse>) {
     }
 }
 
-fn call_leaf_indexed(out: &mut Vec<RawCPUIDResponse>, leaf: u32) {
-    let mut state = RawCPUIDResponse::invoke(leaf, 0);
+fn call_leaf_indexed(out: &mut Vec<RawCPUIDResponse>, state: &mut RawCPUIDResponse) {
     let max_ecx = state.output.eax;
     loop {
         out.push(state.clone());
@@ -832,7 +817,7 @@ fn call_leaf_indexed(out: &mut Vec<RawCPUIDResponse>, leaf: u32) {
 }
 
 fn walk_leaves(out: &mut Vec<RawCPUIDResponse>, base: u32) {
-    let state = RawCPUIDResponse::invoke(base, 0);
+    let mut state = RawCPUIDResponse::invoke(base, 0);
 
     // All valid bases use eax to indicate the maximum supported leaf within that range.
     if state.output.eax < base || state.output.eax > base + 0xFFFF {
@@ -841,28 +826,37 @@ fn walk_leaves(out: &mut Vec<RawCPUIDResponse>, base: u32) {
         return;
     }
 
-    for leaf in state.input.eax..(state.output.eax + 1) {
+    let begin: usize = state.input.eax as usize;
+    let end: usize = state.output.eax as usize + 1;
+
+    out.reserve(end - begin);
+
+    for leaf in begin..end {
+        state.input.eax = leaf as u32;
+        state.input.ecx = 0;
+        state.call();
+
         // Some leaves are indexed (i.e. passing different values for ecx will generate different
         // results). Unfortunately how they're indexed varies significantly. We need to call
         // a handler for each of the special leaves so they can be dumped fully.
         match leaf {
-            0x0000_0004 => call_leaf_04(out),
-            0x0000_0007 => call_leaf_indexed(out, leaf),
-            0x0000_000B => call_leaf_x2apic(out, leaf),
-            0x0000_000D => call_leaf_0d(out),
-            0x0000_000F => call_leaf_0f(out),
-            0x0000_0010 => call_leaf_10(out),
-            0x0000_0012 => call_leaf_12(out),
-            0x0000_0014 => call_leaf_indexed(out, leaf),
-            0x0000_0017 => call_leaf_indexed(out, leaf),
-            0x0000_0018 => call_leaf_indexed(out, leaf),
-            0x0000_001B => call_leaf_1b(out),
-            0x0000_001D => call_leaf_indexed(out, leaf),
-            0x0000_001F => call_leaf_x2apic(out, leaf),
-            0x0000_0020 => call_leaf_indexed(out, leaf),
-            0x8000_001D => call_leaf_ext_1d(out),
-            0x8000_0020 => call_leaf_max_ecx(out, leaf, 1),
-            _ => call_leaf(out, leaf, 0),
+            0x0000_0004 => call_leaf_04(out, &mut state),
+            0x0000_0007 => call_leaf_indexed(out, &mut state),
+            0x0000_000B => call_leaf_x2apic(out, &mut state),
+            0x0000_000D => call_leaf_0d(out, &mut state),
+            0x0000_000F => call_leaf_0f(out, &mut state),
+            0x0000_0010 => call_leaf_10(out, &mut state),
+            0x0000_0012 => call_leaf_12(out, &mut state),
+            0x0000_0014 => call_leaf_indexed(out, &mut state),
+            0x0000_0017 => call_leaf_indexed(out, &mut state),
+            0x0000_0018 => call_leaf_indexed(out, &mut state),
+            0x0000_001B => call_leaf_1b(out, &mut state),
+            0x0000_001D => call_leaf_indexed(out, &mut state),
+            0x0000_001F => call_leaf_x2apic(out, &mut state),
+            0x0000_0020 => call_leaf_indexed(out, &mut state),
+            0x8000_001D => call_leaf_ext_1d(out, &mut state),
+            0x8000_0020 => call_leaf_max_ecx(out, &mut state, 1),
+            _ => out.push(state.clone()),
         }
     }
 }
