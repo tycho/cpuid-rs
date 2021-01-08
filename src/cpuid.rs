@@ -388,7 +388,7 @@ impl Processor {
             signature: Signature::new(),
             topology_decoded: None,
             x2apic_id: 0,
-            topology_props: TopologyProps::new()
+            topology_props: TopologyProps::new(),
         }
     }
 
@@ -518,7 +518,8 @@ impl Processor {
             socket: (self.x2apic_id & self.topology_props.socket.mask) >> self.topology_props.socket.shift,
             core: (self.x2apic_id & self.topology_props.core.mask) >> self.topology_props.core.shift,
             thread: (self.x2apic_id & self.topology_props.thread.mask) >> self.topology_props.thread.shift,
-        }).clone()
+        })
+        .clone()
     }
 }
 

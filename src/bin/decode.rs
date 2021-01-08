@@ -48,10 +48,10 @@ fn main() {
         println!("{: >16}: {}", "Logical CPUs", system.cpu_count);
     }
     if matches.opt_present("v") {
-    println!("\nLogical CPU topology IDs:");
+        println!("\nLogical CPU topology IDs:");
         for cpu in system.cpus.iter() {
             if let Some(topology) = cpu.topology() {
-                println!("  CPU {}: {}", cpu.index, topology );
+                println!("  CPU {}: {}", cpu.index, topology);
             }
         }
     }

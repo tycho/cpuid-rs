@@ -80,7 +80,7 @@ impl fmt::Display for TopologyInferred {
 pub struct TopologyID {
     pub socket: u32,
     pub core: u32,
-    pub thread: u32
+    pub thread: u32,
 }
 impl TopologyID {
     pub fn new() -> TopologyID {
@@ -93,7 +93,11 @@ impl TopologyID {
 }
 impl fmt::Display for TopologyID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!( f, "socket {}, core {}, thread {}", self.socket, self.core, self.thread)
+        write!(
+            f,
+            "socket {}, core {}, thread {}",
+            self.socket, self.core, self.thread
+        )
     }
 }
 
