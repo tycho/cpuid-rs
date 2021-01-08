@@ -46,6 +46,28 @@ impl FeatureVec {
     }
 }
 
+fn leaf_name(leaf: &LeafID, register: &RegisterName) -> &'static str {
+    match leaf.eax {
+        0x0000_0001 | 0x8000_0001 => "Feature Identifiers",
+        0x0000_0006 => "Thermal and Power Management",
+        0x0000_0007 => "Structured Extended Feature Identifiers",
+        0x0000_0014 => "Intel Processor Trace Enumeration",
+        0x8000_0007 => {
+            match register {
+                RegisterName::EBX => "RAS Capabilities",
+                RegisterName::EDX => "Advanced Power Management Information",
+                _ => "",
+            }
+        }
+        0x8000_0008 => "Extended Feature Extensions ID",
+        0x8000_000A => "SVM Feature Identifiers",
+        0x8000_001A => "Performance Optimization Identifiers",
+        0x8000_001B => "Instruction Based Sampling Identifiers",
+        0xC000_0001 => "Centaur Feature Identifiers",
+        _ => "",
+    }
+}
+
 impl fmt::Display for FeatureVec {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Features:\n")?;
@@ -56,7 +78,11 @@ impl fmt::Display for FeatureVec {
                 if lastreg != RegisterName::Unknown {
                     write!(f, "\n")?;
                 }
-                write!(f, "  Leaf {:08x}:{:02x}, register {:?}\n", v.leaf.eax, v.leaf.ecx, v.register)?;
+                let mut name = leaf_name(&v.leaf, &v.register).to_string();
+                if name.len() > 0 {
+                    name = format!(" ({})", name.to_string());
+                }
+                write!(f, "  Leaf {:08x}:{:02x}{}, register {:?}\n", v.leaf.eax, v.leaf.ecx, name, v.register)?;
                 lastleaf = v.leaf.clone();
                 lastreg = v.register.clone();
             }
