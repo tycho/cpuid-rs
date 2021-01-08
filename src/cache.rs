@@ -275,8 +275,13 @@ impl CacheVec {
 impl fmt::Display for CacheVec {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Caches:\n")?;
+        let mut last_was_cache: bool = true;
         for v in &self.0 {
             let formatted = format!("{}\n", v);
+            if last_was_cache && v.cachetype.is_tlb() {
+                last_was_cache = false;
+                write!(f, "\n")?;
+            }
             write!(f, "{}", indent(&formatted, "  "))?;
         }
         Ok(())
@@ -355,24 +360,23 @@ impl CacheDescription {
             // e.g. 64 byte line size
             write!(f, ", {} byte line size", self.linesize)?;
         }
-        write!(f, "\n")?;
         if self.flags.ecc() {
-            write!(f, "{: >13}ECC\n", "")?;
+            write!(f, "\n{: >13}ECC", "")?;
         }
         if self.flags.self_initializing() {
-            write!(f, "{: >13}Self-initializing\n", "")?;
+            write!(f, "\n{: >13}Self-initializing", "")?;
         }
         if self.flags.inclusive() {
-            write!(f, "{: >13}Inclusive of lower cache levels\n", "")?;
+            write!(f, "\n{: >13}Inclusive of lower cache levels", "")?;
         }
         if self.flags.complex_indexing() {
-            write!(f, "{: >13}Complex indexing\n", "")?;
+            write!(f, "\n{: >13}Complex indexing", "")?;
         }
         if self.flags.wbinvd_not_inclusive() {
-            write!(f, "{: >13}Does not invalidate lower cache levels\n", "")?;
+            write!(f, "\n{: >13}Does not invalidate lower cache levels", "")?;
         }
         if self.flags.undocumented() {
-            write!(f, "{: >13}Undocumented descriptor\n", "")?;
+            write!(f, "\n{: >13}Undocumented descriptor", "")?;
         }
         //write!(f, "{: >11}Shared by max {} threads\n", "", self.max_threads_sharing);
         Ok(())
