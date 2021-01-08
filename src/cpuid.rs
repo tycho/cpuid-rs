@@ -338,6 +338,7 @@ impl Processor {
     fn fill(&mut self) {}
 }
 
+#[derive(Debug)]
 pub struct System {
     /// Vector of processors in the system.
     pub cpus: Vec<Processor>,
