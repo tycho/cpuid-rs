@@ -236,6 +236,18 @@ impl Ord for CacheDescription {
             ord = self.level.cmp(&other.level);
         }
         if ord == Ordering::Equal {
+            ord = self.flags.pages_1g().cmp(&other.flags.pages_1g());
+        }
+        if ord == Ordering::Equal {
+            ord = self.flags.pages_4m().cmp(&other.flags.pages_4m());
+        }
+        if ord == Ordering::Equal {
+            ord = self.flags.pages_2m().cmp(&other.flags.pages_2m());
+        }
+        if ord == Ordering::Equal {
+            ord = self.flags.pages_4k().cmp(&other.flags.pages_4k());
+        }
+        if ord == Ordering::Equal {
             ord = self.cachetype.cmp(&other.cachetype);
         }
         if ord == Ordering::Equal {
