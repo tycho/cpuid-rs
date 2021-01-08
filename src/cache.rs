@@ -534,8 +534,8 @@ fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec)
         desc.flags.set_wbinvd_not_inclusive(edx.wbinvd());
         desc.flags.set_inclusive(edx.inclusive());
 
-        desc.instances = match system.cpus.len() >= (eax.sharing() + 1) as usize {
-            true => system.cpus.len() / (eax.sharing() + 1) as usize,
+        desc.instances = match system.cpu_count >= (eax.sharing() + 1) as usize {
+            true => system.cpu_count / (eax.sharing() + 1) as usize,
             false => 1,
         };
 
@@ -931,8 +931,8 @@ fn walk_intel_dcp(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
                 .with_complex_indexing(edx.complex_indexing())
                 .with_wbinvd_not_inclusive(edx.wbinvd()),
 
-            instances: match system.cpus.len() >= (eax.max_threads_sharing() + 1) as usize {
-                true => system.cpus.len() / (eax.max_threads_sharing() + 1) as usize,
+            instances: match system.cpu_count >= (eax.max_threads_sharing() + 1) as usize {
+                true => system.cpu_count / (eax.max_threads_sharing() + 1) as usize,
                 false => 1,
             },
 
@@ -1045,8 +1045,8 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
                     .with_pages_4m(ebx.has_4m_pages())
                     .with_pages_1g(ebx.has_1g_pages()),
 
-                instances: match system.cpus.len() >= (edx.max_threads_sharing() + 1) as usize {
-                    true => system.cpus.len() / (edx.max_threads_sharing() + 1) as usize,
+                instances: match system.cpu_count >= (edx.max_threads_sharing() + 1) as usize {
+                    true => system.cpu_count / (edx.max_threads_sharing() + 1) as usize,
                     false => 1,
                 },
 

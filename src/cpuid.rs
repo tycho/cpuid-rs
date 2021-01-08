@@ -340,8 +340,14 @@ impl Processor {
 
 #[derive(Debug)]
 pub struct System {
-    /// Vector of processors in the system.
+    /// Vector of processors in the system. May only contain one instance if the
+    /// platform does not support thread affinity APIs (*COUGH, COUGH* macOS
+    /// *COUGH, COUGH*)
     pub cpus: Vec<Processor>,
+
+    /// Number of CPUs in the system. May not match the length of the `cpus`
+    /// vector on platforms without thread affinity APIs.
+    pub cpu_count: usize,
 
     /// Matching vendor IDs discovered in the various CPUID leaves. May contain
     /// more than one vendor, e.g. if a hypervisor is present.
@@ -361,6 +367,7 @@ impl System {
     fn new() -> System {
         System {
             cpus: vec![],
+            cpu_count: 0,
             vendor: VendorMask::UNKNOWN,
             name_string: String::new(),
             caches: CacheVec::new(),
@@ -371,6 +378,11 @@ impl System {
     /// Walk all known CPUID leaves for each CPU on the local system and store
     /// the results in a new [System](struct.System.html) object.
     pub fn from_local() -> System {
+        System::from_local_impl()
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn from_local_impl() -> System {
         let mut system: System = System::new();
         let cpu_start: u32 = 0;
         let cpu_end: u32 = num_cpus::get() as u32 - 1;
@@ -392,8 +404,20 @@ impl System {
 
         affinity::set_thread_affinity(old_affinity).unwrap();
 
+        system.cpu_count = num_cpus::get();
         system.fill();
 
+        system
+    }
+
+    #[cfg(target_os = "macos")]
+    fn from_local_impl() -> System {
+        let mut system: System = System::new();
+        let mut processor = Processor::from_local();
+        processor.index = 0;
+        system.cpus.push(processor);
+        system.cpu_count = num_cpus::get();
+        system.fill();
         system
     }
 
