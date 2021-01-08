@@ -19,6 +19,7 @@ fn main() {
         "Parse and import dump file instead of reading from local CPUs",
         "FILE",
     );
+    opts.optflag("v", "verbose", "Print more details");
     opts.optflag("h", "help", "Print this help text");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -43,6 +44,16 @@ fn main() {
     println!("{: >16}: {}", "Signature", system.cpus[0].signature);
     if system.topology.valid() {
         println!("{: >16}: {}", "Topology", system.topology);
+    } else {
+        println!("{: >16}: {}", "Logical CPUs", system.cpu_count);
+    }
+    if matches.opt_present("v") {
+    println!("\nLogical CPU topology IDs:");
+        for cpu in system.cpus.iter() {
+            if let Some(topology) = cpu.topology() {
+                println!("  CPU {}: {}", cpu.index, topology );
+            }
+        }
     }
     println!("\n{}", system.caches);
     println!("{}", system.features);

@@ -229,12 +229,23 @@ pub struct CacheDescription {
 impl Ord for CacheDescription {
     fn cmp(&self, other: &Self) -> Ordering {
         let mut ord: Ordering = Ordering::Equal;
+
         if ord == Ordering::Equal {
+            // Put caches with most instances first
+            ord = self.instances.cmp(&other.instances).reverse();
+        }
+
+        if ord == Ordering::Equal {
+            // Put caches before TLBs
             ord = self.cachetype.is_tlb().cmp(&other.cachetype.is_tlb());
         }
+
         if ord == Ordering::Equal {
+            // Put lower level caches/TLBs first
             ord = self.level.cmp(&other.level);
         }
+
+        // Order TLBs by page sizes, smallest to largest
         if ord == Ordering::Equal {
             ord = self.flags.pages_1g().cmp(&other.flags.pages_1g());
         }
@@ -247,12 +258,17 @@ impl Ord for CacheDescription {
         if ord == Ordering::Equal {
             ord = self.flags.pages_4k().cmp(&other.flags.pages_4k());
         }
+
         if ord == Ordering::Equal {
+            // Order by CacheType values
             ord = self.cachetype.cmp(&other.cachetype);
         }
+
         if ord == Ordering::Equal {
+            // Order by cache size/entries
             ord = self.size.cmp(&other.size);
         }
+
         ord
     }
 }

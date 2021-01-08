@@ -10,7 +10,7 @@ use std::io::{prelude::*, BufReader};
 
 use crate::cache::{describe_caches, CacheVec};
 use crate::feature::{describe_features, FeatureVec};
-use crate::topology::{describe_topology, TopologyInferred, TopologyProps};
+use crate::topology::{describe_topology, TopologyID, TopologyInferred, TopologyProps};
 
 #[derive(Debug, Clone, PartialEq)]
 /// Input `eax` and `ecx` values for a single CPUID invocation.
@@ -369,8 +369,13 @@ pub struct Processor {
     /// Describes the processor signature.
     pub signature: Signature,
 
+    topology_decoded: Option<TopologyID>,
+
     /// x2APIC ID, if supported
-    pub x2apic_id: u32,
+    x2apic_id: u32,
+
+    /// Used for decoding `x2apic_id`
+    topology_props: TopologyProps,
 }
 
 impl Processor {
@@ -381,7 +386,9 @@ impl Processor {
             leaves: vec![],
             vendor: VendorMask::UNKNOWN,
             signature: Signature::new(),
+            topology_decoded: None,
             x2apic_id: 0,
+            topology_props: TopologyProps::new()
         }
     }
 
@@ -453,10 +460,13 @@ impl Processor {
         }
     }
 
+    pub fn topology(&self) -> &Option<TopologyID> {
+        &self.topology_decoded
+    }
+
     fn fill(&mut self) {
         self.fill_vendor();
         self.fill_signature();
-        self.fill_x2apic();
     }
 
     fn fill_signature(&mut self) {
@@ -499,10 +509,16 @@ impl Processor {
         debug!("final vendor mask: {:#?}", self.vendor);
     }
 
-    fn fill_x2apic(&mut self) {
+    fn fill_x2apic_topology(&mut self, props: &TopologyProps) {
         if let Some(leaf) = self.get_subleaf(0x0000_000B, 0x0) {
             self.x2apic_id = leaf.output.edx;
         }
+        self.topology_props = props.clone();
+        self.topology_decoded = Some(TopologyID {
+            socket: (self.x2apic_id & self.topology_props.socket.mask) >> self.topology_props.socket.shift,
+            core: (self.x2apic_id & self.topology_props.core.mask) >> self.topology_props.core.shift,
+            thread: (self.x2apic_id & self.topology_props.thread.mask) >> self.topology_props.thread.shift,
+        }).clone()
     }
 }
 
@@ -538,10 +554,10 @@ pub struct System {
     /// Vector of all the discovered features in the first processor.
     pub features: FeatureVec,
 
-    /// Inferred CPU topology (cores, threads, sockets)
+    /// Inferred CPU topology (cores, threads, sockets), if available.
     pub topology: TopologyInferred,
 
-    /// Discovered CPU topology metadata
+    /// Discovered CPU topology metadata, if available.
     pub topology_props: TopologyProps,
 }
 
@@ -695,7 +711,10 @@ impl System {
     }
 
     fn fill_x2apic(&mut self) {
-        describe_topology(self)
+        describe_topology(self);
+        for cpu in self.cpus.iter_mut() {
+            cpu.fill_x2apic_topology(&self.topology_props)
+        }
     }
 }
 

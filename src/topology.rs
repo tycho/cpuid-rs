@@ -8,10 +8,10 @@ use crate::cpuid::{Processor, System};
 
 #[derive(Debug, Clone)]
 pub struct TopologyProp {
-    mask: u32,
-    shift: u8,
-    total: u16,
-    reported: bool,
+    pub mask: u32,
+    pub shift: u8,
+    pub total: u16,
+    pub reported: bool,
 }
 
 impl TopologyProp {
@@ -27,9 +27,9 @@ impl TopologyProp {
 
 #[derive(Debug, Clone)]
 pub struct TopologyProps {
-    socket: TopologyProp,
-    core: TopologyProp,
-    thread: TopologyProp,
+    pub socket: TopologyProp,
+    pub core: TopologyProp,
+    pub thread: TopologyProp,
 }
 
 impl TopologyProps {
@@ -44,9 +44,9 @@ impl TopologyProps {
 
 #[derive(Debug, Clone, Default)]
 pub struct TopologyInferred {
-    sockets: u32,
-    cores_per_socket: u16,
-    threads_per_core: u8,
+    pub sockets: u32,
+    pub cores_per_socket: u16,
+    pub threads_per_core: u8,
 }
 
 impl TopologyInferred {
@@ -73,6 +73,27 @@ impl fmt::Display for TopologyInferred {
             self.cores_per_socket,
             self.threads_per_core
         )
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct TopologyID {
+    pub socket: u32,
+    pub core: u32,
+    pub thread: u32
+}
+impl TopologyID {
+    pub fn new() -> TopologyID {
+        TopologyID {
+            socket: 0,
+            core: 0,
+            thread: 0,
+        }
+    }
+}
+impl fmt::Display for TopologyID {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!( f, "socket {}, core {}, thread {}", self.socket, self.core, self.thread)
     }
 }
 
