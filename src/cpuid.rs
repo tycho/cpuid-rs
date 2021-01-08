@@ -121,6 +121,7 @@ bitflags! {
 
 impl VendorMask {
     fn from_string(input: String) -> VendorMask {
+        debug!("attempting to match vendor string {:?}", input);
         match input.as_str() {
             "GenuineIntel" => VendorMask::INTEL,
             "GenuineIotel" => VendorMask::INTEL,
@@ -158,7 +159,10 @@ fn bytes_to_ascii(bytes: Vec<u8>) -> String {
     let mut string = String::with_capacity(bytes.len());
     for byte in bytes.iter() {
         let chr = *byte as char;
-        if chr.is_ascii() {
+        if chr == '\0' {
+            break;
+        }
+        if chr.is_ascii() && !chr.is_control() {
             string.push(chr);
         }
     }
