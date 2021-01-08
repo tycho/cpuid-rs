@@ -78,3 +78,5 @@ including:
   but it also added like 500KB to the binary sizes. I didn't really need all
   the flexibility it provided, so I ended up migrating to the much smaller and
   less capable `getopt` crate.
+* Implement a test/benchmark suite
+* Keep the `rustdoc` information up to date and readable.
