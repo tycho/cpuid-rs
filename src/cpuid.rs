@@ -554,6 +554,7 @@ impl System {
         let old_affinity = affinity::get_thread_affinity().unwrap();
 
         for cpu in cpu_start..(cpu_end + 1) {
+            debug!("collecting leaves for CPU {:?}", cpu);
             let mask = vec![cpu as usize];
 
             // TODO: This can fail, and we should be noisy about it when it does.
@@ -579,6 +580,7 @@ impl System {
         let mut system: System = System::new();
         let mut processor = Processor::from_local();
         processor.index = 0;
+        debug!("collecting leaves for one CPU");
         system.cpus.push(processor);
         system.cpu_count = num_cpus::get();
         system.fill();
