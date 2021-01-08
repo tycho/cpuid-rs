@@ -463,7 +463,7 @@ fn translate_amd_l2_associativity(raw: u8) -> u8 {
 }
 
 fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
-    if (system.vendor & VendorMask::AMD).is_empty() {
+    if !system.vendor.contains(VendorMask::AMD) {
         debug!("walk_amd_cache_extended() skipped on non-AMD CPU");
         return false;
     }
@@ -570,7 +570,7 @@ fn walk_amd_cache_legacy(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
 
-    if (system.vendor & VendorMask::AMD).is_empty() {
+    if !system.vendor.contains(VendorMask::AMD) {
         debug!("walk_amd_cache_legacy() skipped on non-AMD CPU");
         return;
     }
@@ -693,7 +693,7 @@ fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
 
-    if (system.vendor & VendorMask::AMD).is_empty() {
+    if !system.vendor.contains(VendorMask::AMD) {
         debug!("walk_amd_tlb() skipped on non-AMD CPU");
         return;
     }

@@ -1142,7 +1142,7 @@ static FEATURE_LEAVES: [FeatureLeaf; 20] = [
 pub(crate) fn describe_features(cpu: &Processor, vendor_mask: VendorMask) -> FeatureVec {
     let mut output: FeatureVec = FeatureVec::new();
     for feature_leaf in FEATURE_LEAVES.iter() {
-        if (vendor_mask & feature_leaf.vendor_mask).is_empty() {
+        if !vendor_mask.intersects(feature_leaf.vendor_mask) {
             continue;
         }
         if let Some(raw) = cpu.get_subleaf(feature_leaf.leaf.eax, feature_leaf.leaf.ecx) {
@@ -1158,7 +1158,7 @@ pub(crate) fn describe_features(cpu: &Processor, vendor_mask: VendorMask) -> Fea
             }
             for feature_spec in feature_leaf.bits.iter() {
                 let bit = feature_spec.bit;
-                if !(vendor_mask & feature_spec.vendor_mask).is_empty() {
+                if vendor_mask.intersects(feature_leaf.vendor_mask) {
                     let mask = 1 << bit;
                     if (register & mask) != 0 {
                         // Mark that we've seen and accounted for this feature

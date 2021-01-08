@@ -458,7 +458,7 @@ impl Processor {
             self.signature.model = rawsignature.model() as u16;
             self.signature.stepping = rawsignature.stepping();
             if rawsignature.family() == 0xf
-                || (!(self.vendor & VendorMask::INTEL).is_empty() && rawsignature.family() == 0x6)
+                || (self.vendor.contains(VendorMask::INTEL) && rawsignature.family() == 0x6)
             {
                 self.signature.model += (rawsignature.extmodel() as u16) << 4;
             }
