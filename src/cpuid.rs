@@ -664,6 +664,9 @@ fn walk_bases(out: &mut Vec<RawCPUIDResponse>) {
         0x8086_0000,
         // Centaur base
         0xc000_0000,
+        // Mystery leaves, found as easter eggs on some CPUs
+        0x8FFF_FFFE,
+        0x8FFF_FFFF,
     ];
 
     for base in bases.iter() {
