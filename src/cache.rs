@@ -13,6 +13,7 @@ use crate::cpuid::{Processor, RegisterName, System, VendorMask};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
+/// Describes the type of cache or TLB (e.g. does it contain code, data, both?)
 pub enum CacheType {
     Unknown = 0,
     Code = 1,
@@ -70,6 +71,7 @@ impl fmt::Display for CacheType {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
+/// Describes the level of the cache, if known.
 pub enum CacheLevel {
     L0 = 0,
     L1 = 1,
@@ -87,10 +89,20 @@ impl Default for CacheLevel {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
+/// Describes the associativity type of the cache.
 pub enum CacheAssociativityType {
+    /// Cache associativity type is unknown or not specified.
     Unknown = 0,
+
+    /// Cache has 1-way set associativity.
     DirectMapped = 1,
+
+    /// Cache has N-way set associativity. See the
+    /// [ways](struct.CacheAssociativity.html#structfield.ways) field of
+    /// [CacheAssocitivity](struct.CacheAssociativity) to find out the N value.
     NWay = 2,
+
+    /// Cache is fully associative.
     FullyAssociative = 3,
 }
 impl Default for CacheAssociativityType {
@@ -100,8 +112,13 @@ impl Default for CacheAssociativityType {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// Describes the associativity of a cache or TLB.
 pub struct CacheAssociativity {
+    /// Type of associativity for this cache or TLB.
     pub mapping: CacheAssociativityType,
+
+    /// If cache is N-way set associative, contains the number of ways of
+    /// associativity. Otherwise this field is invalid.
     pub ways: u16,
 }
 
@@ -132,33 +149,80 @@ impl fmt::Display for CacheAssociativity {
 
 #[bitfield(bits = 16)]
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// Contains the features of a cache or TLB.
 pub struct CacheFlags {
+    /// `true` if the cache descriptor information was discovered outside of the
+    /// standard CPU manuals.
     pub undocumented: bool,
+
+    /// `true` if this is an IA-64 (Itanium) cache type.
     pub ia64: bool,
+
+    /// `true` if the cache has error correction.
     pub ecc: bool,
+
+    /// `true` if the cache is sectored.
     pub sectored: bool,
+
+    /// `true` if the TLB handles 4KB pages.
     pub pages_4k: bool,
+
+    /// `true` if the TLB handles 2MB pages.
     pub pages_2m: bool,
+
+    /// `true` if the TLB handles 4MB pages.
     pub pages_4m: bool,
+
+    /// `true` if the TLB handles 1GB pages.
     pub pages_1g: bool,
+
+    /// `true` if the cache is initialized without software intervention.
     pub self_initializing: bool,
+
+    /// `true` if the cache uses complex indexing.
     pub complex_indexing: bool,
+
+    /// `true` if the cache includes data from lower cache levels.
     pub inclusive: bool,
+
+    /// `true` if WBINVD does not invalidate lower cache levels.
     pub wbinvd_not_inclusive: bool,
     #[skip]
     __: B4,
 }
 
 #[derive(Debug, Default, Eq)]
+/// Describes a cache or TLB.
 pub struct CacheDescription {
+    /// Level of the cache.
     pub level: CacheLevel,
+
+    /// Type of cache or TLB.
     pub cachetype: CacheType,
+
+    /// When describing a cache, size is in KB. When describing a TLB, size is the number of entries in the TLB.
     pub size: u32,
+
+    /// Cache line size. Not valid for TLBs.
     pub linesize: u16,
+
+    /// Flags describing the cache or TLB properties.
     pub flags: CacheFlags,
+
+    /// Associativity type and ways for this cache or TLB.
     pub associativity: CacheAssociativity,
+
+    /// Number of cache partitions. This field is invalid for a TLB.
     pub partitions: u16,
+
+    /// Maximum number of logical CPUs sharing this cache or TLB. This may be
+    /// zero, if the hardware vendor or CPUID leaf do not specify the
+    /// information.
     pub max_threads_sharing: u16,
+
+    /// Inferred number of instances of this cache/TLB in the system, based on
+    /// the `max_threads_sharing` field and the number of logical processors in
+    /// the [System](struct.System.html)
     pub instances: usize,
 }
 
@@ -199,6 +263,7 @@ impl PartialEq for CacheDescription {
 }
 
 #[derive(Debug)]
+/// A vector of [CacheDescriptions](struct.CacheDescription.html).
 pub struct CacheVec(pub Vec<CacheDescription>);
 
 impl CacheVec {
@@ -1139,7 +1204,7 @@ fn walk_intel(system: &System, cpu: &Processor, out: &mut CacheVec) {
     walk_intel_tlb(system, cpu, out);
 }
 
-pub fn describe_caches(system: &System, cpu: &Processor) -> CacheVec {
+pub(crate) fn describe_caches(system: &System, cpu: &Processor) -> CacheVec {
     let mut caches: CacheVec = CacheVec(vec![]);
     walk_amd(system, cpu, &mut caches);
     walk_intel(system, cpu, &mut caches);

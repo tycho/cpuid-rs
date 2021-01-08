@@ -3,7 +3,6 @@ use std::env;
 
 use cpuid::cpuid::System;
 use cpuid::cpuid::VendorMask;
-use cpuid::feature::collect as collect_features;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -82,5 +81,5 @@ fn main() {
     println!("{: >16}: {:?}", "Vendor(s)", system.vendor);
     println!("{: >16}: {}", "Processor Name", system.name_string);
     println!("\n{}", system.caches);
-    println!("{}", collect_features(&system.cpus[0], VendorMask::ANY_CPU));
+    println!("{}", system.features);
 }

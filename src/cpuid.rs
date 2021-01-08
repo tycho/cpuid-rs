@@ -6,10 +6,14 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader};
 
 use crate::cache::{describe_caches, CacheVec};
+use crate::feature::{describe_features, FeatureVec};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LeafID {
+    /// Input `eax` value
     pub eax: u32,
+
+    /// Input `ecx` value
     pub ecx: u32,
 }
 
@@ -147,6 +151,7 @@ impl Registers {
         }
     }
 
+    /// Read a specific register by name.
     pub fn register(&self, name: RegisterName) -> u32 {
         match name {
             RegisterName::EAX => self.eax,
@@ -157,8 +162,9 @@ impl Registers {
         }
     }
 
-    /// Try to create an ASCII representation of the bytes in the registers. Uses '.' as
-    /// a placeholder for invalid ASCII values.
+    /// Try to create an ASCII representation of the bytes in the registers,
+    /// ordered as `[eax, ebx, ecx, edx]`. Uses `.` as a placeholder for bytes
+    /// that cannot be represented as ASCII values.
     pub fn ascii(&self) -> String {
         let mut bytes: Vec<u8> = vec![];
         for register in [self.eax, self.ebx, self.ecx, self.edx].iter() {
@@ -175,6 +181,11 @@ use core::arch::x86::__cpuid_count;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::__cpuid_count;
 
+/// Directly query via the CPUID instruction on the current processor. You
+/// probably don't want to use this function, unless you want to discover
+/// information that this library does not expose an interface for. It is
+/// recommended that you use the higher level interfaces available in the
+/// [System](struct.System.html) structure.
 pub fn cpuid(input: &LeafID, output: &mut Registers) {
     unsafe {
         let result = __cpuid_count(input.eax, input.ecx);
@@ -182,12 +193,6 @@ pub fn cpuid(input: &LeafID, output: &mut Registers) {
         output.ebx = result.ebx;
         output.ecx = result.ecx;
         output.edx = result.edx;
-        // Alternate implementation, using rust nightly
-        //    asm!("cpuid",
-        //        inout("eax") input.eax => output.eax,
-        //        lateout("ebx") output.ebx,
-        //        inout("ecx") input.ecx => output.ecx,
-        //        lateout("edx") output.edx)
     }
 }
 
@@ -198,12 +203,17 @@ pub struct RawCPUIDResponse {
 }
 
 impl RawCPUIDResponse {
+    /// Creates an empty `RawCPUIDResponse` structure.
     pub fn new() -> RawCPUIDResponse {
         RawCPUIDResponse {
             input: LeafID::new(0, 0),
             output: Registers::new(0, 0, 0, 0),
         }
     }
+
+    /// Executes the CPUID instruction with the input register values specified
+    /// by `eax` and `ecx` and creates a new `RawCPUIDResponse` containing the
+    /// response.
     pub fn invoke(eax: u32, ecx: u32) -> RawCPUIDResponse {
         let input = LeafID::new(eax, ecx);
         let mut output = Registers::new(0, 0, 0, 0);
@@ -213,9 +223,17 @@ impl RawCPUIDResponse {
             output: output,
         }
     }
+
+    /// Executes the CPUID instruction with the input values specified in
+    /// [input](#structfield.input) and fills [output](#structfield.output) with
+    /// the response register values.
     pub fn call(&mut self) {
         cpuid(&self.input, &mut self.output);
     }
+
+    /// Increments `ecx` in [input](#structfield.input) and executes the CPUID
+    /// instruction, replacing the values in [output](#structfield.output) with
+    /// the response register values.
     pub fn next_subleaf(&mut self) {
         self.input.ecx += 1;
         cpuid(&self.input, &mut self.output);
@@ -224,11 +242,16 @@ impl RawCPUIDResponse {
 
 #[derive(Debug, Clone)]
 pub struct Processor {
+    /// Logical index of this CPU on the system.
     pub index: u32,
+
+    /// Vector of all the raw [responses](struct.RawCPUIDResponse.html) for known
+    /// CPUID leaves.
     pub leaves: Vec<RawCPUIDResponse>,
 }
 
 impl Processor {
+    /// Creates an empty `Processor` object.
     pub fn new() -> Processor {
         Processor {
             index: 0,
@@ -236,6 +259,9 @@ impl Processor {
         }
     }
 
+    /// Walk all known CPUID leaves on the current processor. Note that you should
+    /// set your process or thread affinity to prevent the OS from moving the
+    /// process/thread around causing you to query other CPUs inadvertently.
     pub fn from_local() -> Processor {
         let mut processor: Processor = Processor::new();
         walk_bases(&mut processor.leaves);
@@ -243,27 +269,32 @@ impl Processor {
         processor
     }
 
-    fn fill(&mut self) {}
-
-    pub fn get_subleaf(&self, leaf: u32, subleaf: u32) -> Option<&RawCPUIDResponse> {
+    /// Gets a single [RawCPUIDResponse](struct.RawCPUIDResponse.html) object
+    /// matching the specified input `eax` and `ecx` values. Returns None if no
+    /// match was found for this processor.
+    pub fn get_subleaf(&self, eax: u32, ecx: u32) -> Option<&RawCPUIDResponse> {
         for result in self.leaves.iter() {
-            if result.input.eax == leaf && result.input.ecx == subleaf {
+            if result.input.eax == eax && result.input.ecx == ecx {
                 return Some(&result);
             }
         }
         None
     }
 
-    pub fn get(&self, leaf: u32) -> Vec<&RawCPUIDResponse> {
+    /// Gets all [RawCPUIDResponse](struct.RawCPUIDResponse.html) objects with matching input `eax` values.
+    pub fn get(&self, eax: u32) -> Vec<&RawCPUIDResponse> {
         let mut out: Vec<&RawCPUIDResponse> = vec![];
         for result in self.leaves.iter() {
-            if result.input.eax == leaf {
+            if result.input.eax == eax {
                 out.push(&result);
             }
         }
         out
     }
 
+    /// Finds the matching hardware vendor as a
+    /// [VendorMask](struct.VendorMask.html) for the current processor, based on
+    /// the contents of leaf `0x0000_0000`.
     pub fn decode_vendor(&self, base: u32) -> VendorMask {
         if let Some(leaf) = self.get_subleaf(base, 0x0) {
             let mut bytes: Vec<u8> = vec![];
@@ -278,6 +309,8 @@ impl Processor {
         }
     }
 
+    /// Tests if the specified `bit` is set in the specified `register` from a
+    /// particular leaf/subleaf.
     pub fn has_feature_bit(
         &self,
         leaf: u32,
@@ -299,25 +332,41 @@ impl Processor {
             }
         }
     }
+
+    fn fill(&mut self) {}
 }
 
 pub struct System {
+    /// Vector of processors in the system.
     pub cpus: Vec<Processor>,
+
+    /// Matching vendor IDs discovered in the various CPUID leaves. May contain
+    /// more than one vendor, e.g. if a hypervisor is present.
     pub vendor: VendorMask,
+
+    /// Normalized processor name string.
     pub name_string: String,
+
+    /// Vector of all the discovered caches and TLBs in the first processor.
     pub caches: CacheVec,
+
+    /// Vector of all the discovered features in the first processor.
+    pub features: FeatureVec,
 }
 
 impl System {
     fn new() -> System {
         System {
             cpus: vec![],
-            caches: CacheVec::new(),
             vendor: VendorMask::UNKNOWN,
             name_string: String::new(),
+            caches: CacheVec::new(),
+            features: FeatureVec::new(),
         }
     }
 
+    /// Walk all known CPUID leaves for each CPU on the local system and store
+    /// the results in a new [System](struct.System.html) object.
     pub fn from_local() -> System {
         let mut system: System = System::new();
         let cpu_start: u32 = 0;
@@ -345,6 +394,8 @@ impl System {
         system
     }
 
+    /// Import a CPUID dump file instead of querying processors on the local
+    /// machine.
     pub fn from_file(filename: &str) -> std::io::Result<System> {
         let file = File::open(filename)?;
         let reader = BufReader::new(file);
@@ -396,10 +447,15 @@ impl System {
         self.fill_vendor();
         self.fill_processor_name();
         self.fill_caches();
+        self.fill_features();
     }
 
     fn fill_caches(&mut self) {
         self.caches = describe_caches(self, &self.cpus[0])
+    }
+
+    fn fill_features(&mut self) {
+        self.features = describe_features(&self.cpus[0], self.vendor);
     }
 
     fn fill_vendor(&mut self) {
@@ -672,13 +728,4 @@ fn walk_bases(out: &mut Vec<RawCPUIDResponse>) {
     for base in bases.iter() {
         walk_leaves(out, *base);
     }
-}
-
-/// Walk all known CPUID leaves on the current processor. Note that you should
-/// set your process or thread affinity to prevent the OS from moving the
-/// process/thread around causing you to query other CPUs inadvertently.
-pub fn walk() -> Processor {
-    let mut out: Processor = Processor::new();
-    walk_bases(&mut out.leaves);
-    out
 }

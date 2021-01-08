@@ -5,13 +5,27 @@ use textwrap::indent;
 use crate::cpuid::{LeafID, Processor, RegisterName, VendorMask};
 
 #[derive(Debug, Clone)]
+/// Describes a discovered CPU feature.
 pub struct Feature {
-    leaf: LeafID,
-    register: RegisterName,
-    bit: u8,
-    vendor_mask: VendorMask,
-    shortname: &'static str,
-    name: &'static str,
+    /// Leaf this feature flag was discovered in.
+
+    pub leaf: LeafID,
+
+    /// Register this feature flag was discovered in.
+    pub register: RegisterName,
+
+    /// Bit index for this feature in the leaf/register this feature was discovered in.
+    pub bit: u8,
+
+    /// Mask of valid vendors this feature can be detected in.
+    pub vendor_mask: VendorMask,
+
+    /// Short name of the feature. May be blank if the feature doesn't have/need
+    /// a shorter name or initialism.
+    pub shortname: &'static str,
+
+    /// Longer, more descriptive name of the feature.
+    pub name: &'static str,
 }
 
 impl Feature {
@@ -42,6 +56,7 @@ impl fmt::Display for Feature {
 }
 
 #[derive(Debug)]
+/// Vector of [Feature](struct.Feature.html) objects.
 pub struct FeatureVec(pub Vec<Feature>);
 
 impl FeatureVec {
@@ -1124,7 +1139,7 @@ static FEATURE_LEAVES: [FeatureLeaf; 20] = [
     FeatureLeaf { leaf: LeafID { eax: 0xC000_0001, ecx: 0, }, vendor_mask: VendorMask::ANY_CPU, register: RegisterName::EDX, bits: &FEATURES_C000_0001_EDX, },
 ];
 
-pub fn collect(cpu: &Processor, vendor_mask: VendorMask) -> FeatureVec {
+pub(crate) fn describe_features(cpu: &Processor, vendor_mask: VendorMask) -> FeatureVec {
     let mut output: FeatureVec = FeatureVec::new();
     for feature_leaf in FEATURE_LEAVES.iter() {
         if (vendor_mask & feature_leaf.vendor_mask).is_empty() {
