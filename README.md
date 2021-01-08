@@ -1,41 +1,75 @@
 ## About
-I want to eventually move this beyond "proof of concept", but my primary goal
-of this whole project is just to learn how to write Rust code. I tried writing
-another project before and found it was a bit too ambitious given my lack of
-knowledge about Rust data structures, argument passing conventions, ownership,
-etc. Porting my CPUID tooling to Rust feels a lot more achievable.
+This is an incomplete Rust port of my [CPUID tool written in
+C](https://github.com/tycho/cpuid). My primary goal of this project is just to
+learn to write Rust and to come up with a decent library for decoding CPUID
+information.
 
-## Current state
-As of this writing, this is only a standalone tool called "dump" which will
-print out all known CPUID leaves on each CPU (including the weird indexed
-leaves). It currently makes no effort to decode the raw data -- it just
-enumerates and prints it as-is.
+The project is currently has three components:
 
-Dumps from the "dump" tool are identical in output format to my [CPUID tool
-written in C](https://github.com/tycho/cpuid), and can be parsed by using that
-tool (see the `-f` argument on there).
+- `cpuid` library/crate, with ability to import CPUID data from a text file or
+  from CPUs on the local system
+- `decode` binary, which prints human-readable decoding of the more
+  interesting features exposed in CPUID
+- `dump` binary, which can create text-based dump files of all known CPUID
+  leaves on the local system. Dumps can be imported with the library or with
+  the `decode` binary using the `-f` argument.
 
-## Future work
-* Create a library and maintainable API for calling CPUID, most likely with tiered
-  complexity depending on level of information needed
-	- at the lowest level, just an exported function to execute the CPUID
-    instruction directly with specific EAX/ECX
-	- at higher levels, exported APIs for:
-      + enumerating/walking all CPUID leaves (especially for use by "dump" tool)
-      + identifying specific CPU feature support
-      + structured data about the CPU and its caches, TLBs, features,
-      topology, etc.
-      
-* There are numerous leaves which are redundant, and some are better sources of
-  information than others. It would be nice to account for these in any
-  exported API. E.g. on Intel, leaf 0x2 cache descriptors are obsoleted by
-  leaf 0x4 deterministic cache parameters and leaf 0x18 deterministic address
-  translation parameters. On AMD, leaves for L1/L2/L3 cache data are
-  obsoleted by the more expressive AMD Extended Cache Topology leaf.
+## Current State
+The library (and `dump` binary) can dump all known valid CPUID leaves, even
+those with weird subleaf indexing (i.e. nonzero input `ecx` values).
 
-* Make "dump" use the new library, walk all the leaves and print the results.
+The library and decode tools can decode some of the more interesting features,
+including:
 
-* Make a new "decode" tool which prints decoded CPUID leaves in
-  human-readable and machine-readable formats. Should have features similar to
-  my C version of CPUID (ability to dump/decode, reading/decoding dump files,
-  dumping in multiple formats, etc)
+- Feature flags from various leaves:
+  + Leaf `0x0000_0001`, feature identifiers
+  + Leaf `0x8000_0001`, extended feature identifiers
+  + Leaf `0x0000_0006`, thermal and power management
+  + Leaf `0x0000_0007`, structured extended feature identifiers
+  + Leaf `0x0000_0014`, Intel processor trace enumeration
+  + Leaf `0x8000_0007`, RAS and advanced power management information
+  + Leaf `0x8000_0008`, extended feature extensions ID
+  + Leaf `0x8000_000A`, SVM feature identifiers
+  + Leaf `0x8000_001A`, performance optimization identifiers
+  + Leaf `0x8000_001B`, instruction based sampling identifiers
+  + Leaf `0xC000_0001`, Centaur feature identifiers
+
+- Cache descriptors from multiple different leaves, with preference for the
+  most detailed sources:
+  + Leaf `0x0000_0004`, Deterministic Cache Parameters. Intel-specific leaf.
+  + Leaf `0x0000_0018`, Deterministic Address Translation Parameters.
+	Intel-specific leaf.
+  + Leaf `0x8000_001D`, Cache Topology Information. AMD-specific leaf, similar
+	in detail to the Intel-specific "deterministic" leaves above.
+  + Leaf `0x8000_0005`, L1 TLB and L1 cache information. AMD-specific leaf.
+  + Leaf `0x8000_0006`, L2 TLB and L2/L3 cache information. AMD-specific leaf.
+  + Leaf `0x8000_0019`, 1GB page TLB information. AMD-specific leaf.
+  + Leaf `0x0000_0002`, Cache and TLB information. This leaf has the lowest
+	priority over the others, because it's the least detailed and Intel has
+	deprecated its use in favor of the "Deterministic" leaves above. It also
+	requires maintaining an ugly mapping of magic byte identifiers to
+	structured information about the cache features.
+
+- CPU topology from leaf `0x0000_000B` (x2APIC)
+
+## Future Work
+* Implement more CPUID leaves in a library-friendly way. I don't want the
+  interface to become clunky, disorganized, or filled with redundant
+  information.
+* Consider different API designs. I cobbled this together and I'm not quite
+  happy with the API the crate currently exposes.
+* Consider how to implement feature detection slightly differently --
+  I currently just generate a big vector of all the features it discovers, but
+  it's not exactly searchable. The design really reflects how I use it right
+  now, which is to just iterate over all of the features and print them out.
+* Investigate and fix any bad practices I've used in my Rust code. I am
+  a complete Rust newbie, so I have no doubt done some stupid things.
+* Release a crate on crates.io at some point, once the design isn't shifting
+  as much.
+* Implement support for reading multiple different formats from CPUID dump
+  files. For example, Todd Allen's CPUID tool, the dumps from InstLatx64, etc.
+* Keep dependencies as minimal as possible. Early on I tried using a crate
+  called `clap` for command-line parsing. It's a wonderful and powerful tool,
+  but it also added like 500KB to the binary sizes. I didn't really need all
+  the flexibility it provided, so I ended up migrating to the much smaller and
+  less capable `getopt` crate.
