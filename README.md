@@ -14,6 +14,11 @@ The project is currently has three components:
   leaves on the local system. Dumps can be imported with the library or with
   the `decode` binary using the `-f` argument.
 
+## Building
+Install rust (ideally via `rustup`, which is what I use), and then do a `cargo
+build` in the project root and test out the `target/debug/dump` and
+`target/debug/decode` binaries.
+
 ## Current State
 The library (and `dump` binary) can dump all known valid CPUID leaves, even
 those with weird subleaf indexing (i.e. nonzero input `ecx` values).
