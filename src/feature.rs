@@ -1158,7 +1158,7 @@ pub(crate) fn describe_features(cpu: &Processor, vendor_mask: VendorMask) -> Fea
             }
             for feature_spec in feature_leaf.bits.iter() {
                 let bit = feature_spec.bit;
-                if vendor_mask.intersects(feature_leaf.vendor_mask) {
+                if vendor_mask.intersects(feature_spec.vendor_mask) {
                     let mask = 1 << bit;
                     if (register & mask) != 0 {
                         // Mark that we've seen and accounted for this feature
