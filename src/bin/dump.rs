@@ -19,12 +19,7 @@ fn main() {
         "Parse and import dump file instead of reading from local CPUs",
         "FILE",
     );
-    opts.optopt(
-        "c",
-        "cpu",
-        "Which CPU to decode CPUID information from",
-        "INDEX",
-    );
+    opts.optopt("c", "cpu", "Which CPU to decode CPUID information from", "INDEX");
     opts.optflag("h", "help", "Print this help text");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,

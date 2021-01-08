@@ -425,18 +425,13 @@ impl CacheDescription {
 impl fmt::Display for CacheDescription {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.cachetype {
-            CacheType::Data | CacheType::Code | CacheType::Unified | CacheType::Trace => {
-                self.fmt_cache(f)
-            }
+            CacheType::Data | CacheType::Code | CacheType::Unified | CacheType::Trace => self.fmt_cache(f),
             CacheType::DataTLB
             | CacheType::CodeTLB
             | CacheType::SharedTLB
             | CacheType::LoadOnlyTLB
             | CacheType::StoreOnlyTLB => self.fmt_tlb(f),
-            _ => panic!(
-                "Don't know how to describe cache type {:#?}",
-                self.cachetype
-            ),
+            _ => panic!("Don't know how to describe cache type {:#?}", self.cachetype),
         }
         //write!(f, "SOME KINDA CACHE LOL\n")?;
     }
@@ -773,9 +768,9 @@ fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
-                    associativity: CacheAssociativity::from_identifier(
-                        translate_amd_l2_associativity(tlb.dtlb_associativity()),
-                    ),
+                    associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
+                        tlb.dtlb_associativity(),
+                    )),
                     size: tlb.dtlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
@@ -787,9 +782,9 @@ fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
-                    associativity: CacheAssociativity::from_identifier(
-                        translate_amd_l2_associativity(tlb.itlb_associativity()),
-                    ),
+                    associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
+                        tlb.itlb_associativity(),
+                    )),
                     size: tlb.itlb_entries() as u32,
                     flags: cacheflags.clone(),
                     ..Default::default()
@@ -815,9 +810,9 @@ fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::DataTLB,
-                    associativity: CacheAssociativity::from_identifier(
-                        translate_amd_l2_associativity(tlb.dtlb_associativity()),
-                    ),
+                    associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
+                        tlb.dtlb_associativity(),
+                    )),
                     size: tlb.dtlb_entries() as u32,
                     flags: CacheFlags::new().with_pages_1g(true),
                     ..Default::default()
@@ -829,9 +824,9 @@ fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
                 let desc = CacheDescription {
                     level: level.clone(),
                     cachetype: CacheType::CodeTLB,
-                    associativity: CacheAssociativity::from_identifier(
-                        translate_amd_l2_associativity(tlb.itlb_associativity()),
-                    ),
+                    associativity: CacheAssociativity::from_identifier(translate_amd_l2_associativity(
+                        tlb.itlb_associativity(),
+                    )),
                     size: tlb.itlb_entries() as u32,
                     flags: CacheFlags::new().with_pages_1g(true),
                     ..Default::default()
@@ -1079,12 +1074,7 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
 }
 
 #[cfg(feature = "legacy-cache-descriptors")]
-fn walk_intel_legacy_cache(
-    _system: &System,
-    cpu: &Processor,
-    out: &mut CacheVec,
-    filter: &Vec<CacheType>,
-) {
+fn walk_intel_legacy_cache(_system: &System, cpu: &Processor, out: &mut CacheVec, filter: &Vec<CacheType>) {
     if let Some(raw) = cpu.get_subleaf(0x0000_0002, 0) {
         let mut bytes: Vec<u8> = vec![];
         bytes.extend_from_slice(&raw.output.eax.to_le_bytes());

@@ -323,7 +323,11 @@ pub struct Signature {
 }
 impl fmt::Display for Signature {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Family {:X}h, Model {:X}h, Stepping {:X}h", self.family, self.model, self.stepping)
+        write!(
+            f,
+            "Family {:X}h, Model {:X}h, Stepping {:X}h",
+            self.family, self.model, self.stepping
+        )
     }
 }
 
@@ -424,13 +428,7 @@ impl Processor {
 
     /// Tests if the specified `bit` is set in the specified `register` from a
     /// particular leaf/subleaf.
-    pub fn has_feature_bit(
-        &self,
-        leaf: u32,
-        subleaf: u32,
-        register: RegisterName,
-        bit: u32,
-    ) -> bool {
+    pub fn has_feature_bit(&self, leaf: u32, subleaf: u32, register: RegisterName, bit: u32) -> bool {
         match self.get_subleaf(leaf, subleaf) {
             None => false,
             Some(leafdata) => {
@@ -656,14 +654,7 @@ impl System {
         let mut bytes: Vec<u8> = vec![];
         for leaf_id in [0x8000_0002, 0x8000_0003, 0x8000_0004].iter() {
             if let Some(leaf) = self.cpus[0].get_subleaf(*leaf_id, 0x0) {
-                for register in [
-                    leaf.output.eax,
-                    leaf.output.ebx,
-                    leaf.output.ecx,
-                    leaf.output.edx,
-                ]
-                .iter()
-                {
+                for register in [leaf.output.eax, leaf.output.ebx, leaf.output.ecx, leaf.output.edx].iter() {
                     for byte in register.to_le_bytes().iter() {
                         bytes.push(*byte);
                     }
