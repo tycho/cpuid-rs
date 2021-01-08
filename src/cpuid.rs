@@ -561,6 +561,7 @@ impl System {
             system.cpus.push(processor);
         }
 
+        system.cpu_count = system.cpus.len();
         system.fill();
 
         Ok(system)
