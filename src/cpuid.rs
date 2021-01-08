@@ -1,5 +1,8 @@
+#![allow(dead_code)]
+
 use bitflags::*;
 use log::*;
+use modular_bitfield::prelude::*;
 use scan_fmt::*;
 use std::fmt;
 use std::fs::File;
@@ -242,6 +245,48 @@ impl RawCPUIDResponse {
     }
 }
 
+#[bitfield(bits = 32)]
+#[derive(Debug)]
+struct SignatureRaw {
+    stepping: B4,
+    model: B4,
+    family: B4,
+    #[skip]
+    __: B4,
+    extmodel: B4,
+    extfamily: B8,
+    #[skip]
+    __: B4,
+}
+
+#[derive(Debug, Clone)]
+/// Describes the processor signature (family, model, stepping).
+pub struct Signature {
+    /// Family ID, including extended family.
+    pub family: u16,
+
+    /// Model ID, including extended model.
+    pub model: u16,
+
+    /// Stepping ID.
+    pub stepping: u8,
+}
+impl fmt::Display for Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Family {:x}h, Model {:x}h, Stepping {:x}h", self.family, self.model, self.stepping)
+    }
+}
+
+impl Signature {
+    pub fn new() -> Signature {
+        Signature {
+            family: 0,
+            model: 0,
+            stepping: 0,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Processor {
     /// Logical index of this CPU on the system.
@@ -250,6 +295,13 @@ pub struct Processor {
     /// Vector of all the raw [responses](struct.RawCPUIDResponse.html) for known
     /// CPUID leaves.
     pub leaves: Vec<RawCPUIDResponse>,
+
+    /// Matching vendor IDs discovered in the various CPUID leaves. May contain
+    /// more than one vendor, e.g. if a hypervisor is present.
+    pub vendor: VendorMask,
+
+    /// Describes the processor signature.
+    pub signature: Signature,
 }
 
 impl Processor {
@@ -258,6 +310,8 @@ impl Processor {
         Processor {
             index: 0,
             leaves: vec![],
+            vendor: VendorMask::UNKNOWN,
+            signature: Signature::new(),
         }
     }
 
@@ -335,7 +389,50 @@ impl Processor {
         }
     }
 
-    fn fill(&mut self) {}
+    fn fill(&mut self) {
+        self.fill_vendor();
+        self.fill_signature();
+    }
+
+    fn fill_signature(&mut self) {
+        if let Some(leaf) = self.get_subleaf(0x0000_0001, 0) {
+            let rawsignature: SignatureRaw = SignatureRaw::from_bytes(leaf.output.eax.to_le_bytes());
+            self.signature.family = rawsignature.family() as u16 + rawsignature.extfamily() as u16;
+            self.signature.model = rawsignature.model() as u16;
+            self.signature.stepping = rawsignature.stepping();
+            if rawsignature.family() == 0xf
+                || (!(self.vendor & VendorMask::INTEL).is_empty() && rawsignature.family() == 0x6)
+            {
+                self.signature.model += (rawsignature.extmodel() as u16) << 4;
+            }
+        }
+    }
+
+    fn fill_vendor(&mut self) {
+        if let Some(leaf) = self.get_subleaf(0x0000_0000, 0x0) {
+            let mut bytes: Vec<u8> = vec![];
+            for register in [leaf.output.ebx, leaf.output.edx, leaf.output.ecx].iter() {
+                for byte in register.to_le_bytes().iter() {
+                    bytes.push(*byte);
+                }
+            }
+            let vendor_id = VendorMask::from_string(bytes_to_ascii(bytes));
+            debug!("decoded processor vendor: {:#?}", vendor_id);
+            self.vendor |= vendor_id;
+        }
+        if let Some(leaf) = self.get_subleaf(0x4000_0000, 0x0) {
+            let mut bytes: Vec<u8> = vec![];
+            for register in [leaf.output.ebx, leaf.output.ecx, leaf.output.edx].iter() {
+                for byte in register.to_le_bytes().iter() {
+                    bytes.push(*byte);
+                }
+            }
+            let vendor_id = VendorMask::from_string(bytes_to_ascii(bytes));
+            debug!("decoded hypervisor vendor: {:#?}", vendor_id);
+            self.vendor |= vendor_id;
+        }
+        debug!("final vendor mask: {:#?}", self.vendor);
+    }
 }
 
 #[derive(Debug)]
@@ -486,29 +583,7 @@ impl System {
     }
 
     fn fill_vendor(&mut self) {
-        if let Some(leaf) = self.cpus[0].get_subleaf(0x0000_0000, 0x0) {
-            let mut bytes: Vec<u8> = vec![];
-            for register in [leaf.output.ebx, leaf.output.edx, leaf.output.ecx].iter() {
-                for byte in register.to_le_bytes().iter() {
-                    bytes.push(*byte);
-                }
-            }
-            let vendor_id = VendorMask::from_string(bytes_to_ascii(bytes));
-            debug!("decoded processor vendor: {:#?}", vendor_id);
-            self.vendor |= vendor_id;
-        }
-        if let Some(leaf) = self.cpus[0].get_subleaf(0x4000_0000, 0x0) {
-            let mut bytes: Vec<u8> = vec![];
-            for register in [leaf.output.ebx, leaf.output.ecx, leaf.output.edx].iter() {
-                for byte in register.to_le_bytes().iter() {
-                    bytes.push(*byte);
-                }
-            }
-            let vendor_id = VendorMask::from_string(bytes_to_ascii(bytes));
-            debug!("decoded hypervisor vendor: {:#?}", vendor_id);
-            self.vendor |= vendor_id;
-        }
-        debug!("final vendor mask: {:#?}", self.vendor);
+        self.vendor = self.cpus[0].vendor;
     }
 
     fn fill_processor_name(&mut self) {

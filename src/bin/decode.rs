@@ -40,6 +40,7 @@ fn main() {
 
     println!("{: >16}: {:?}", "Vendor(s)", system.vendor);
     println!("{: >16}: {}", "Processor Name", system.name_string);
+    println!("{: >16}: {}", "Signature", system.cpus[0].signature);
     println!("\n{}", system.caches);
     println!("{}", system.features);
 }
