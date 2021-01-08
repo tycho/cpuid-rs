@@ -9,7 +9,7 @@ use textwrap::indent;
 #[cfg(feature = "legacy-cache-descriptors")]
 use crate::cache_descriptors::lookup_cache_descriptor;
 
-use crate::cpuid::{Processor, RegisterName, System};
+use crate::cpuid::{Processor, RegisterName, System, VendorMask};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
@@ -207,6 +207,17 @@ impl CacheVec {
     }
 }
 
+impl fmt::Display for CacheVec {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Caches:\n")?;
+        for v in &self.0 {
+            let formatted = format!("{}\n", v);
+            write!(f, "{}", indent(&formatted, "  "))?;
+        }
+        Ok(())
+    }
+}
+
 fn size_str(kb: u32, cachetype: CacheType) -> String {
     if cachetype == CacheType::Trace {
         return format!("{}K-µop", kb);
@@ -350,17 +361,6 @@ impl fmt::Display for CacheDescription {
     }
 }
 
-impl fmt::Display for CacheVec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Caches:\n")?;
-        for v in &self.0 {
-            let formatted = format!("{}\n", v);
-            write!(f, "{}", indent(&formatted, "  "))?;
-        }
-        Ok(())
-    }
-}
-
 fn translate_amd_l2_associativity(raw: u8) -> u8 {
     match raw {
         0x0 => 0x0,
@@ -382,7 +382,7 @@ fn translate_amd_l2_associativity(raw: u8) -> u8 {
 }
 
 fn walk_amd_cache_extended(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool {
-    if system.vendor_string != "AuthenticAMD" {
+    if !(system.vendor & VendorMask::AMD).is_empty() {
         debug!("walk_amd_cache_extended() skipped on non-AMD CPU");
         return false;
     }
@@ -489,7 +489,7 @@ fn walk_amd_cache_legacy(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
 
-    if system.vendor_string != "AuthenticAMD" {
+    if !(system.vendor & VendorMask::AMD).is_empty() {
         debug!("walk_amd_cache_legacy() skipped on non-AMD CPU");
         return;
     }
@@ -612,7 +612,7 @@ fn walk_amd_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
     // AMD L1 cache features (0x8000_0005)
     // AMD L2 cache features (0x8000_0006)
 
-    if system.vendor_string != "AuthenticAMD" {
+    if !(system.vendor & VendorMask::AMD).is_empty() {
         debug!("walk_amd_tlb() skipped on non-AMD CPU");
         return;
     }

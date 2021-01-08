@@ -2,6 +2,8 @@ use getopts::Options;
 use std::env;
 
 use cpuid::cpuid::System;
+use cpuid::cpuid::VendorMask;
+use cpuid::feature::collect as collect_features;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -74,10 +76,11 @@ fn main() {
         if processor.index < cpu_start || processor.index > cpu_end {
             continue;
         }
-        println!("CPU {}:", processor.index);
+        //println!("CPU {}:", processor.index);
     }
     //println!("{:#?}", system.caches());
-    println!("{: >16}: {}", "Vendor ID", system.vendor_string);
+    println!("{: >16}: {:?}", "Vendor(s)", system.vendor);
     println!("{: >16}: {}", "Processor Name", system.name_string);
     println!("\n{}", system.caches);
+    println!("{}", collect_features(&system.cpus[0], VendorMask::ANY_CPU));
 }

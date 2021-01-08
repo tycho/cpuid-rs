@@ -1,3 +1,4 @@
+use bitflags::*;
 use log::*;
 use scan_fmt::*;
 use std::fmt;
@@ -6,10 +7,16 @@ use std::io::{prelude::*, BufReader};
 
 use crate::cache::{describe_caches, CacheVec};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LeafID {
     pub eax: u32,
     pub ecx: u32,
+}
+
+impl LeafID {
+    pub fn new(eax: u32, ecx: u32) -> LeafID {
+        LeafID { eax: eax, ecx: ecx }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -20,16 +27,66 @@ pub struct Registers {
     pub edx: u32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u8)]
 pub enum RegisterName {
     EAX,
     EBX,
     ECX,
     EDX,
+    Unknown,
 }
 
-impl LeafID {
-    pub fn new(eax: u32, ecx: u32) -> LeafID {
-        LeafID { eax: eax, ecx: ecx }
+bitflags! {
+    pub struct VendorMask: u32 {
+        const UNKNOWN = 0x0000_0000;
+
+        // Common helper masks
+        const ANY_CPU = 0x0000_00FF;
+        const ANY_HYPERVISOR = 0x0000_FF00;
+
+        // One-hot identifiers for CPU vendors
+        const INTEL = 0x0000_0001;
+        const AMD = 0x0000_0002;
+        const CENTAUR = 0x0000_0004;
+        const CYRIX = 0x0000_0008;
+        const TRANSMETA = 0x0000_0010;
+        const HYGON = 0x0000_0020;
+
+        // Common vendor masks
+        const INTELAMD = 0x0000_0003;
+
+        // One-hot identifiers for hypervisor vendors
+        const HYPERV = 0x0000_0100;
+        const KVM = 0x0000_0200;
+        const TCG = 0x0000_0400;
+        const XEN = 0x0000_0800;
+        const PARALLELS = 0x0000_1000;
+        const VMWARE = 0x0000_2000;
+        const BHYVE = 0x0000_4000;
+    }
+}
+
+impl VendorMask {
+    fn from_string(input: String) -> VendorMask {
+        match input.as_str() {
+            "GenuineIntel" => VendorMask::INTEL,
+            "GenuineIotel" => VendorMask::INTEL,
+            "AuthenticAMD" => VendorMask::AMD,
+            "CentaurHauls" => VendorMask::CENTAUR,
+            "CyrixInstead" => VendorMask::CYRIX,
+            "GenuineTMx86" => VendorMask::TRANSMETA,
+            "HygonGenuine" => VendorMask::HYGON,
+
+            "Microsoft Hv" => VendorMask::HYPERV,
+            "KVMKVMKVM" => VendorMask::KVM,
+            "TCGTCGTCGTCG" => VendorMask::TCG,
+            "XenVMMXenVMM" => VendorMask::XEN,
+            " lrpepyh  vr" => VendorMask::PARALLELS,
+            "VMwareVMware" => VendorMask::VMWARE,
+            "bhyve bhyve " => VendorMask::BHYVE,
+            _ => VendorMask::UNKNOWN,
+        }
     }
 }
 
@@ -96,6 +153,7 @@ impl Registers {
             RegisterName::EBX => self.ebx,
             RegisterName::ECX => self.ecx,
             RegisterName::EDX => self.edx,
+            _ => panic!("Invalid register"),
         }
     }
 
@@ -206,6 +264,20 @@ impl Processor {
         out
     }
 
+    pub fn decode_vendor(&self, base: u32) -> VendorMask {
+        if let Some(leaf) = self.get_subleaf(base, 0x0) {
+            let mut bytes: Vec<u8> = vec![];
+            for register in [leaf.output.ebx, leaf.output.edx, leaf.output.ecx].iter() {
+                for byte in register.to_le_bytes().iter() {
+                    bytes.push(*byte);
+                }
+            }
+            VendorMask::from_string(bytes_to_ascii(bytes))
+        } else {
+            VendorMask::UNKNOWN
+        }
+    }
+
     pub fn has_feature_bit(
         &self,
         leaf: u32,
@@ -221,6 +293,7 @@ impl Processor {
                     RegisterName::EBX => leafdata.output.ebx,
                     RegisterName::ECX => leafdata.output.ecx,
                     RegisterName::EDX => leafdata.output.edx,
+                    _ => panic!("Invalid register"),
                 };
                 bits & (1 << bit) != 0
             }
@@ -230,7 +303,7 @@ impl Processor {
 
 pub struct System {
     pub cpus: Vec<Processor>,
-    pub vendor_string: String,
+    pub vendor: VendorMask,
     pub name_string: String,
     pub caches: CacheVec,
 }
@@ -240,7 +313,7 @@ impl System {
         System {
             cpus: vec![],
             caches: CacheVec::new(),
-            vendor_string: String::new(),
+            vendor: VendorMask::UNKNOWN,
             name_string: String::new(),
         }
     }
@@ -337,9 +410,22 @@ impl System {
                     bytes.push(*byte);
                 }
             }
-            self.vendor_string = bytes_to_ascii(bytes);
-            debug!("decoded vendor string: {:#?}", self.vendor_string);
+            let vendor_id = VendorMask::from_string(bytes_to_ascii(bytes));
+            debug!("decoded processor vendor: {:#?}", vendor_id);
+            self.vendor |= vendor_id;
         }
+        if let Some(leaf) = self.cpus[0].get_subleaf(0x4000_0000, 0x0) {
+            let mut bytes: Vec<u8> = vec![];
+            for register in [leaf.output.ebx, leaf.output.ecx, leaf.output.edx].iter() {
+                for byte in register.to_le_bytes().iter() {
+                    bytes.push(*byte);
+                }
+            }
+            let vendor_id = VendorMask::from_string(bytes_to_ascii(bytes));
+            debug!("decoded hypervisor vendor: {:#?}", vendor_id);
+            self.vendor |= vendor_id;
+        }
+        debug!("final vendor mask: {:#?}", self.vendor);
     }
 
     fn fill_processor_name(&mut self) {
