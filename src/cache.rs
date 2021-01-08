@@ -287,11 +287,14 @@ impl CacheVec {
 impl fmt::Display for CacheVec {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Caches:\n")?;
-        let mut last_was_cache: bool = true;
+        let mut cache_count = 0;
         for v in &self.0 {
             let formatted = format!("{}\n", v);
-            if last_was_cache && v.cachetype.is_tlb() {
-                last_was_cache = false;
+            if !v.cachetype.is_tlb() {
+                cache_count += 1;
+            }
+            if cache_count > 0 && v.cachetype.is_tlb() {
+                cache_count = 0;
                 write!(f, "\n")?;
             }
             write!(f, "{}", indent(&formatted, "  "))?;
