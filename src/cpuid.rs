@@ -142,6 +142,8 @@ fn squeeze_str(input: String) -> String {
 }
 
 impl Registers {
+    /// Creates a new [Registers](struct.Registers.html) structure from register
+    /// values.
     pub fn new(eax: u32, ebx: u32, ecx: u32, edx: u32) -> Registers {
         Registers {
             eax: eax,
