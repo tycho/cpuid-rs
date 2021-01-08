@@ -75,10 +75,10 @@ impl fmt::Display for CacheType {
 pub enum CacheLevel {
     L0 = 0,
     L1 = 1,
-    L2 = 2,
-    L3 = 3,
-    L4 = 4,
-    Unknown = 5,
+    Unknown = 2,
+    L2 = 3,
+    L3 = 4,
+    L4 = 5,
 }
 
 impl Default for CacheLevel {
