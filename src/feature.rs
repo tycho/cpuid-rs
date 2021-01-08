@@ -25,6 +25,10 @@ impl Feature {
             name: spec.name,
         }
     }
+
+    pub fn leaf_name(&self) -> &'static str {
+        leaf_name(&self.leaf, self.register)
+    }
 }
 
 impl fmt::Display for Feature {
@@ -46,7 +50,7 @@ impl FeatureVec {
     }
 }
 
-fn leaf_name(leaf: &LeafID, register: &RegisterName) -> &'static str {
+fn leaf_name(leaf: &LeafID, register: RegisterName) -> &'static str {
     match leaf.eax {
         0x0000_0001 | 0x8000_0001 => "Feature Identifiers",
         0x0000_0006 => "Thermal and Power Management",
@@ -78,7 +82,7 @@ impl fmt::Display for FeatureVec {
                 if lastreg != RegisterName::Unknown {
                     write!(f, "\n")?;
                 }
-                let mut name = leaf_name(&v.leaf, &v.register).to_string();
+                let mut name = leaf_name(&v.leaf, v.register).to_string();
                 if name.len() > 0 {
                     name = format!(" ({})", name.to_string());
                 }
