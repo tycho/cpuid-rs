@@ -4,6 +4,9 @@ debug:
 release:
 	cargo build --release
 
+doc:
+	cargo doc
+
 all: debug release
 
 clean:
