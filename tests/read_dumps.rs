@@ -437,7 +437,10 @@ fn import_dump_intel() {
 #[test]
 fn import_dump_localsystem() {
     let import = System::from_local();
+    #[cfg(not(target_os = "macos"))]
     assert_eq!(import.cpu_count, import.cpus.len());
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    assert!(import.vendor.intersects(VendorMask::ANY_CPU));
     // TODO: more tests here, probably by getting information from other sources and
     // cross-referencing.
 }
