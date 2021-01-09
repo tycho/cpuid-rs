@@ -1,8 +1,8 @@
 use assert_cmd::prelude::*; // Add methods on commands
+use predicates::prelude::*;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::process::Command; // Run programs
-use predicates::prelude::*;
 
 fn dump_path(name: &str) -> String {
     let mut pathbuf = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -28,10 +28,7 @@ fn decode() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn decode_on_missing_dump_file() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("decode")?;
-    cmd.arg("-f")
-        .arg("bogus-file-path")
-        .assert()
-        .failure();
+    cmd.arg("-f").arg("bogus-file-path").assert().failure();
     Ok(())
 }
 
