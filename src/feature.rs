@@ -9,7 +9,6 @@ use crate::internal::feature_flags::{FeatureLeaf, FeatureSpec, FEATURE_LEAVES};
 /// Describes a discovered CPU feature.
 pub struct Feature {
     /// Leaf this feature flag was discovered in.
-
     pub leaf: LeafID,
 
     /// Register this feature flag was discovered in.
@@ -72,13 +71,11 @@ fn leaf_name(leaf: &LeafID, register: RegisterName) -> &'static str {
         0x0000_0006 => "Thermal and Power Management",
         0x0000_0007 => "Structured Extended Feature Identifiers",
         0x0000_0014 => "Intel Processor Trace Enumeration",
-        0x8000_0007 => {
-            match register {
-                RegisterName::EBX => "RAS Capabilities",
-                RegisterName::EDX => "Advanced Power Management Information",
-                _ => "",
-            }
-        }
+        0x8000_0007 => match register {
+            RegisterName::EBX => "RAS Capabilities",
+            RegisterName::EDX => "Advanced Power Management Information",
+            _ => "",
+        },
         0x8000_0008 => "Extended Feature Extensions ID",
         0x8000_000A => "SVM Feature Identifiers",
         0x8000_001A => "Performance Optimization Identifiers",
@@ -91,7 +88,10 @@ fn leaf_name(leaf: &LeafID, register: RegisterName) -> &'static str {
 impl fmt::Display for FeatureVec {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Features:\n")?;
-        let mut lastleaf: LeafID = LeafID { eax: 0xFFFF_FFFF, ecx: 0xFFFF_FFFF };
+        let mut lastleaf: LeafID = LeafID {
+            eax: 0xFFFF_FFFF,
+            ecx: 0xFFFF_FFFF,
+        };
         let mut lastreg: RegisterName = RegisterName::Unknown;
         for v in &self.0 {
             if v.leaf != lastleaf || v.register != lastreg {
@@ -102,7 +102,11 @@ impl fmt::Display for FeatureVec {
                 if name.len() > 0 {
                     name = format!(" ({})", name.to_string());
                 }
-                write!(f, "  Leaf {:08x}:{:02x}{}, register {:?}\n", v.leaf.eax, v.leaf.ecx, name, v.register)?;
+                write!(
+                    f,
+                    "  Leaf {:08x}:{:02x}{}, register {:?}\n",
+                    v.leaf.eax, v.leaf.ecx, name, v.register
+                )?;
                 lastleaf = v.leaf.clone();
                 lastreg = v.register.clone();
             }
@@ -139,11 +143,8 @@ pub(crate) fn describe_features(cpu: &Processor, vendor_mask: VendorMask) -> Fea
                         // bit. We can report on unaccounted for bits afterward
                         // (in debug)
                         register &= !mask;
-                        output.0.push(Feature::from_detection(
-                            feature_leaf,
-                            feature_spec,
-                            bit as u8,
-                        ));
+                        let feature = Feature::from_detection(feature_leaf, feature_spec, bit as u8);
+                        output.0.push(feature);
                     }
                 }
             }

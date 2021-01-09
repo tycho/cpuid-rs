@@ -15,15 +15,15 @@ use crate::cpuid::{Processor, RegisterName, System, VendorMask};
 #[repr(u8)]
 /// Describes the type of cache or TLB (e.g. does it contain code, data, both?)
 pub enum CacheType {
-    Unknown = 0,
-    Code = 1,
-    Trace = 2,
-    Data = 3,
-    Unified = 4,
-    DataTLB = 5,
-    CodeTLB = 6,
-    SharedTLB = 7,
-    LoadOnlyTLB = 8,
+    Unknown      = 0,
+    Code         = 1,
+    Trace        = 2,
+    Data         = 3,
+    Unified      = 4,
+    DataTLB      = 5,
+    CodeTLB      = 6,
+    SharedTLB    = 7,
+    LoadOnlyTLB  = 8,
     StoreOnlyTLB = 9,
 }
 
@@ -73,12 +73,12 @@ impl fmt::Display for CacheType {
 #[repr(u8)]
 /// Describes the level of the cache, if known.
 pub enum CacheLevel {
-    L0 = 0,
-    L1 = 1,
+    L0      = 0,
+    L1      = 1,
     Unknown = 2,
-    L2 = 3,
-    L3 = 4,
-    L4 = 5,
+    L2      = 3,
+    L3      = 4,
+    L4      = 5,
 }
 
 impl Default for CacheLevel {
@@ -92,15 +92,15 @@ impl Default for CacheLevel {
 /// Describes the associativity type of the cache.
 pub enum CacheAssociativityType {
     /// Cache associativity type is unknown or not specified.
-    Unknown = 0,
+    Unknown          = 0,
 
     /// Cache has 1-way set associativity.
-    DirectMapped = 1,
+    DirectMapped     = 1,
 
     /// Cache has N-way set associativity. See the
     /// [ways](struct.CacheAssociativity.html#structfield.ways) field of
     /// [CacheAssocitivity](struct.CacheAssociativity) to find out the N value.
-    NWay = 2,
+    NWay             = 2,
 
     /// Cache is fully associative.
     FullyAssociative = 3,

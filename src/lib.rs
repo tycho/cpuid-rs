@@ -3,5 +3,5 @@
 pub mod cpuid;
 pub mod cache;
 pub mod feature;
-pub mod topology;
 pub(crate) mod internal;
+pub mod topology;

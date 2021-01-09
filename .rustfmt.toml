@@ -1,2 +1,9 @@
+# vim: set syntax=toml:
+
+required_version = "1.4.30"
+edition = "2018"
+version = "Two"
+ignore = ["src/internal/**"]
 max_width = 110
-ignore = [ "src/feature.rs" ]
+newline_style = "Unix"
+enum_discrim_align_threshold = 30
