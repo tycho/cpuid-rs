@@ -1,6 +1,8 @@
-[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+cpuid-rs [![Build status](https://github.com/tycho/cpuid-rs/workflows/CI/badge.svg)](https://github.com/tycho/cpuid-rs/actions) [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+========
 
-## About
+About
+-----
 This is an incomplete Rust port of my [CPUID tool written in
 C](https://github.com/tycho/cpuid). My primary goal of this project is just to
 learn to write Rust and to come up with a decent library for decoding CPUID
@@ -16,12 +18,14 @@ The project is currently has three components:
   leaves on the local system. Dumps can be imported with the library or with
   the `decode` binary using the `-f` argument.
 
-## Building
+Building
+--------
 Install rust (ideally via `rustup`, which is what I use), and then do a `cargo
 build` in the project root and test out the `target/debug/dump` and
 `target/debug/decode` binaries.
 
-## Current State
+Current State
+-------------
 The library (and `dump` binary) can dump all known valid CPUID leaves, even
 those with weird subleaf indexing (i.e. nonzero input `ecx` values).
 
@@ -59,7 +63,8 @@ including:
 
 - CPU topology from leaf `0x0000_000B` (x2APIC)
 
-## Future Work
+Future Work
+-----------
 * Implement more CPUID leaves in a library-friendly way. I don't want the
   interface to become clunky, disorganized, or filled with redundant
   information.
