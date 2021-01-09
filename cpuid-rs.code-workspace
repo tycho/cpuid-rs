@@ -5,11 +5,23 @@
 		}
 	],
 	"settings": {
+		"files.eol": "\n",
+		// The rust extension's completion has gotten in my way several times.
 		"rust.racer_completion": false,
 		"files.exclude": {
 			"**/.git": true,
-			"**/.gitignore": true,
 			"Cargo.lock": true
+		},
+		// Visual Studio code ignores rustfmt.toml's exclusions. Leave this as false.
+		"editor.formatOnSave": false,
+		// Better way to do "format on save":
+		"emeraldwalk.runonsave": {
+			"commands": [
+				{ 
+					"match": "\\.rs$",
+					"cmd": "cargo fmt"
+				}
+			]
 		}
 	}
 }
