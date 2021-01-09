@@ -398,30 +398,21 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
         0x50 => Some(CacheDescription {
             cachetype: CacheType::CodeTLB,
             size: 64,
-            flags: CacheFlags::new()
-                .with_pages_4k(true)
-                .with_pages_2m(true)
-                .with_pages_4m(true),
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
             associativity: CacheAssociativity::from_identifier(0x00),
             ..Default::default()
         }),
         0x51 => Some(CacheDescription {
             cachetype: CacheType::CodeTLB,
             size: 128,
-            flags: CacheFlags::new()
-                .with_pages_4k(true)
-                .with_pages_2m(true)
-                .with_pages_4m(true),
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
             associativity: CacheAssociativity::from_identifier(0x00),
             ..Default::default()
         }),
         0x52 => Some(CacheDescription {
             cachetype: CacheType::CodeTLB,
             size: 256,
-            flags: CacheFlags::new()
-                .with_pages_4k(true)
-                .with_pages_2m(true)
-                .with_pages_4m(true),
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
             associativity: CacheAssociativity::from_identifier(0x00),
             ..Default::default()
         }),

@@ -7,7 +7,7 @@ use std::fmt;
 use textwrap::indent;
 
 #[cfg(feature = "legacy-cache-descriptors")]
-use crate::cache_descriptors::lookup_cache_descriptor;
+use crate::internal::cache_descriptors::lookup_cache_descriptor;
 
 use crate::cpuid::{Processor, RegisterName, System, VendorMask};
 
