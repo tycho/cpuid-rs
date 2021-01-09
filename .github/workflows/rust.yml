@@ -45,7 +45,7 @@ jobs:
     - uses: actions/checkout@master
     - name: Install Rust
       run: |
-        rustup update stable --no-self-update
-        rustup default stable
+        rustup update nightly --no-self-update
+        rustup default nightly
         rustup component add rustfmt
     - run: cargo fmt -- --check
