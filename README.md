@@ -1,3 +1,5 @@
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+
 ## About
 This is an incomplete Rust port of my [CPUID tool written in
 C](https://github.com/tycho/cpuid). My primary goal of this project is just to
