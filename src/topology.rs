@@ -42,7 +42,7 @@ impl TopologyProps {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TopologyInferred {
     pub sockets: u32,
     pub cores_per_socket: u16,

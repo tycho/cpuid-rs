@@ -327,7 +327,7 @@ struct SignatureRaw {
     __: B4,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// Describes the processor signature (family, model, stepping).
 pub struct Signature {
     /// Family ID, including extended family.
