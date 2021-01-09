@@ -255,6 +255,7 @@ use core::arch::x86_64::__cpuid_count;
 /// recommended that you use the higher level interfaces available in the
 /// [System](struct.System.html) structure.
 pub fn cpuid(input: &LeafID, output: &mut Registers) {
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     unsafe {
         let result = __cpuid_count(input.eax, input.ecx);
         output.eax = result.eax;
