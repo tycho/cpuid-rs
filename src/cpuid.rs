@@ -59,10 +59,10 @@ bitflags! {
         //
 
         /// Mask covering any physical CPU vendor IDs
-        const ANY_CPU = 0x0000_00FF;
+        const ANY_CPU = 0x0000_FFFF;
 
         /// Mask covering any hypervisor vendor IDs
-        const ANY_HYPERVISOR = 0x0000_FF00;
+        const ANY_HYPERVISOR = 0x00FF_0000;
 
         //
         // One-hot identifiers for CPU vendors
@@ -83,40 +83,50 @@ bitflags! {
         /// Vendor flag for `GenuineTMx86` CPUs
         const TRANSMETA = 0x0000_0010;
 
-        /// Vendor flag for `HygonGenuine` CPUs
-        const HYGON = 0x0000_0020;
+        /// Vendor flag for `HygonGenuine` CPUs. Since this vendor is creating
+        /// AMD CPU clones, this bitmask includes `AMD` in it as well.
+        const HYGON = 0x0000_0022;
+
+        /// Vendor flag for `RiseRiseRise` CPUs
+        const RISE = 0x0000_0040;
+
+        /// Vendor flag for `SiS SiS SiS` CPUs
+        const SIS = 0x0000_0080;
+
+        /// Vendor flag for `Virtual CPU` CPUs
+        const VIRTUAL_CPU = 0x0000_0100;
 
         //
         // Common vendor masks
         //
 
         /// Mask covering both Intel and AMD CPUs.
-        const INTELAMD = 0x0000_0003;
+        const INTELAMD = 0x1000_0003;
 
         //
         // One-hot identifiers for hypervisor vendors
         //
 
         /// Vendor flag for Microsoft Hyper-V hypervisor
-        const HYPERV = 0x0000_0100;
+        const HYPERV = 0x0001_0000;
 
         /// Vendor flag for Linux KVM hypervisor
-        const KVM = 0x0000_0200;
+        const KVM = 0x0002_0000;
 
         /// Vendor flag for QEMU TCG hypervisor
-        const TCG = 0x0000_0400;
+        const TCG = 0x0004_0000;
 
         /// Vendor flag for Xen hypervisor
-        const XEN = 0x0000_0800;
+        const XEN = 0x0008_0000;
 
         /// Vendor flag for Parallels Desktop hypervisor
-        const PARALLELS = 0x0000_1000;
+        const PARALLELS = 0x0010_0000;
 
         /// Vendor flag for VMware hypervisors
-        const VMWARE = 0x0000_2000;
+        const VMWARE = 0x0020_0000;
 
         /// Vendor flag for FreeBSD's byve hypervisor
-        const BHYVE = 0x0000_4000;
+        const BHYVE = 0x0040_0000;
     }
 }
 
@@ -131,6 +141,9 @@ impl VendorMask {
             "CyrixInstead" => VendorMask::CYRIX,
             "GenuineTMx86" => VendorMask::TRANSMETA,
             "HygonGenuine" => VendorMask::HYGON,
+            "SiS SiS SiS " => VendorMask::SIS,
+            "RiseRiseRise" => VendorMask::RISE,
+            "Virtual CPU " => VendorMask::VIRTUAL_CPU,
 
             "Microsoft Hv" => VendorMask::HYPERV,
             "KVMKVMKVM" => VendorMask::KVM,
