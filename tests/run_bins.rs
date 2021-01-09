@@ -48,7 +48,7 @@ fn decode_on_existing_dump() -> Result<(), Box<dyn std::error::Error>> {
 fn dump_generates_identical_dump() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("dump")?;
     let path = dump_path("GenuineIntel/GenuineIntel00006F6_Merom_CPUID.txt");
-    let contents = read_to_string(&path)?;
+    let contents = read_to_string(&path)?.replace("\r", "");
     cmd.arg("-f")
         .arg(&path)
         .assert()
