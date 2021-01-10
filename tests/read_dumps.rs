@@ -50,7 +50,10 @@ fn import_dump_transmeta() {
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::TRANSMETA);
         assert_eq!(import.name_string, "Transmeta Efficeon(tm) Processor TM8000");
+        #[cfg(feature = "legacy-tlb-descriptors")]
         assert_eq!(import.caches.0.len(), 1);
+        #[cfg(not(feature = "legacy-tlb-descriptors"))]
+        assert_eq!(import.caches.0.len(), 0);
         assert_eq!(import.features.0.len(), 25);
     }
 }
@@ -108,7 +111,12 @@ fn import_dump_virtualcpu() {
         assert_eq!(import.cpu_count, 8);
         assert_eq!(import.vendor, VendorMask::VIRTUAL_CPU);
         assert_eq!(import.name_string, "Virtual CPU @ 2.74GHz");
+        #[cfg(all(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors"))]
         assert_eq!(import.caches.0.len(), 6);
+        #[cfg(all(not(feature = "legacy-cache-descriptors"), feature = "legacy-tlb-descriptors"))]
+        assert_eq!(import.caches.0.len(), 2);
+        #[cfg(not(any(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors")))]
+        assert_eq!(import.caches.0.len(), 0);
         assert_eq!(import.features.0.len(), 17);
         assert_eq!(
             import.cpus[0].signature,
@@ -183,7 +191,10 @@ fn import_dump_centaur() {
                 threads_per_core: 1
             }
         );
+        #[cfg(feature = "legacy-tlb-descriptors")]
         assert_eq!(import.caches.0.len(), 4);
+        #[cfg(not(feature = "legacy-tlb-descriptors"))]
+        assert_eq!(import.caches.0.len(), 3);
         for cache in import.caches.0.iter() {
             match cache.cachetype {
                 CacheType::Code | CacheType::Data => {
@@ -343,7 +354,15 @@ fn import_dump_intel() {
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
         assert_eq!(import.name_string, "");
+        #[cfg(all(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors"))]
         assert_eq!(import.caches.0.len(), 7);
+        #[cfg(all(
+            not(feature = "legacy-cache-descriptors"),
+            feature = "legacy-cache-descriptors"
+        ))]
+        assert_eq!(import.caches.0.len(), 7);
+        #[cfg(not(any(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors")))]
+        assert_eq!(import.caches.0.len(), 0);
         assert_eq!(import.features.0.len(), 16);
     }
     {
@@ -355,7 +374,15 @@ fn import_dump_intel() {
         assert_eq!(import.cpu_count, 2);
         assert_eq!(import.vendor, VendorMask::INTEL);
         assert_eq!(import.name_string, "");
+        #[cfg(all(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors"))]
         assert_eq!(import.caches.0.len(), 7);
+        #[cfg(all(
+            not(feature = "legacy-cache-descriptors"),
+            feature = "legacy-cache-descriptors"
+        ))]
+        assert_eq!(import.caches.0.len(), 4);
+        #[cfg(not(any(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors")))]
+        assert_eq!(import.caches.0.len(), 0);
         assert_eq!(import.features.0.len(), 21);
         assert_eq!(
             import.cpus[0].signature,
@@ -374,7 +401,10 @@ fn import_dump_intel() {
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
         assert_eq!(import.name_string, "Intel(R) Celeron(R) M processor 1300MHz");
+        #[cfg(all(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors"))]
         assert_eq!(import.caches.0.len(), 8);
+        #[cfg(not(any(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors")))]
+        assert_eq!(import.caches.0.len(), 0);
         assert_eq!(import.features.0.len(), 24);
     }
     {
@@ -386,7 +416,10 @@ fn import_dump_intel() {
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
         assert_eq!(import.name_string, "Intel(R) Pentium(R) 4 CPU 1700MHz");
+        #[cfg(all(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors"))]
         assert_eq!(import.caches.0.len(), 6);
+        #[cfg(not(any(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors")))]
+        assert_eq!(import.caches.0.len(), 0);
         assert_eq!(import.features.0.len(), 27);
     }
     {
@@ -398,7 +431,10 @@ fn import_dump_intel() {
         assert_eq!(import.cpu_count, 16);
         assert_eq!(import.vendor, VendorMask::INTEL);
         assert_eq!(import.name_string, "Genuine Intel(R) CPU @ 0000 @ 2.67GHz");
+        #[cfg(all(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors"))]
         assert_eq!(import.caches.0.len(), 10);
+        #[cfg(not(any(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors")))]
+        assert_eq!(import.caches.0.len(), 4);
         assert_eq!(import.features.0.len(), 50);
         assert_eq!(
             import.cpus[0].signature,

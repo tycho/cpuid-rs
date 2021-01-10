@@ -1,42 +1,10 @@
-use crate::cache::{CacheAssociativity, CacheDescription, CacheFlags, CacheLevel, CacheType};
+use log::*;
 
-pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
+use crate::cache::{CacheAssociativity, CacheDescription, CacheFlags, CacheLevel, CacheType, CacheVec};
+
+#[cfg(feature = "legacy-cache-descriptors")]
+fn lookup_cache_internal(descriptor: u8) -> Option<CacheDescription> {
     match descriptor {
-        0x01 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 32,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0x02 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 2,
-            flags: CacheFlags::new().with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
-        0x03 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 64,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0x04 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 8,
-            flags: CacheFlags::new().with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0x05 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 32,
-            flags: CacheFlags::new().with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
         0x06 => Some(CacheDescription {
             cachetype: CacheType::Code,
             level: CacheLevel::L1,
@@ -71,14 +39,6 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
             linesize: 32,
             flags: CacheFlags::new(),
             associativity: CacheAssociativity::from_identifier(0x02),
-            ..Default::default()
-        }),
-        0x0B => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            level: CacheLevel::L1,
-            size: 4,
-            flags: CacheFlags::new().with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
             ..Default::default()
         }),
         0x0C => Some(CacheDescription {
@@ -388,93 +348,6 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
             associativity: CacheAssociativity::from_identifier(0x18),
             ..Default::default()
         }),
-        0x4F => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 32,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x00),
-            ..Default::default()
-        }),
-        0x50 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 64,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x00),
-            ..Default::default()
-        }),
-        0x51 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 128,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x00),
-            ..Default::default()
-        }),
-        0x52 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 256,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x00),
-            ..Default::default()
-        }),
-        0x55 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 256,
-            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
-        0x56 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            level: CacheLevel::L0,
-            size: 16,
-            flags: CacheFlags::new().with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0x57 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            level: CacheLevel::L0,
-            size: 16,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0x59 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            level: CacheLevel::L0,
-            size: 16,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
-        0x5A => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 32,
-            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0x5B => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 64,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
-        0x5C => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 128,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
-        0x5D => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 256,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
         0x60 => Some(CacheDescription {
             cachetype: CacheType::Data,
             level: CacheLevel::L1,
@@ -482,21 +355,6 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
             linesize: 64,
             flags: CacheFlags::new().with_sectored(true),
             associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0x61 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 48,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
-        // 0x63 -> two different entries simultaneously, handled in parent function
-        0x64 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 512,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
             ..Default::default()
         }),
         0x66 => Some(CacheDescription {
@@ -524,35 +382,6 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
             linesize: 64,
             flags: CacheFlags::new().with_sectored(true),
             associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0x6A => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            level: CacheLevel::L0,
-            size: 64,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0x6B => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 256,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0x6C => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 128,
-            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0x6D => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 16,
-            flags: CacheFlags::new().with_pages_1g(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
             ..Default::default()
         }),
         0x70 => Some(CacheDescription {
@@ -585,13 +414,6 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
             size: 64,
             flags: CacheFlags::new().with_undocumented(true),
             associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0x76 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 8,
-            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
             ..Default::default()
         }),
         0x77 => Some(CacheDescription {
@@ -783,103 +605,6 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
             associativity: CacheAssociativity::from_identifier(0x0C),
             ..Default::default()
         }),
-        0xA0 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 32,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0xFF),
-            ..Default::default()
-        }),
-        0xB0 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 128,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        // 0xB1 -> two entries, special case. handled in parent function
-        0xB2 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 64,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0xB3 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 128,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0xB4 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            level: CacheLevel::L1,
-            size: 256,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0xB5 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 64,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0xB6 => Some(CacheDescription {
-            cachetype: CacheType::CodeTLB,
-            size: 128,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0xBA => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            level: CacheLevel::L1,
-            size: 64,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0xC0 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 8,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0xC1 => Some(CacheDescription {
-            cachetype: CacheType::SharedTLB,
-            level: CacheLevel::L2,
-            size: 1024,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true),
-            associativity: CacheAssociativity::from_identifier(0x08),
-            ..Default::default()
-        }),
-        0xC2 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 16,
-            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        // 0xC3 -> two entries. special case handled by parent function.
-        0xC4 => Some(CacheDescription {
-            cachetype: CacheType::DataTLB,
-            size: 32,
-            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
-        0xCA => Some(CacheDescription {
-            cachetype: CacheType::SharedTLB,
-            level: CacheLevel::L2,
-            size: 512,
-            flags: CacheFlags::new().with_pages_4k(true),
-            associativity: CacheAssociativity::from_identifier(0x04),
-            ..Default::default()
-        }),
         0xD0 => Some(CacheDescription {
             cachetype: CacheType::Unified,
             level: CacheLevel::L3,
@@ -1015,6 +740,402 @@ pub fn lookup_cache_descriptor(descriptor: u8) -> Option<CacheDescription> {
             associativity: CacheAssociativity::from_identifier(0x18),
             ..Default::default()
         }),
+        _ => None
+    }
+}
+
+#[cfg(feature = "legacy-tlb-descriptors")]
+fn lookup_tlb_internal(descriptor: u8) -> Option<CacheDescription> {
+    match descriptor {
+        0x01 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 32,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x02 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 2,
+            flags: CacheFlags::new().with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0x03 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 64,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x04 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 8,
+            flags: CacheFlags::new().with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x05 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 32,
+            flags: CacheFlags::new().with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x0B => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            level: CacheLevel::L1,
+            size: 4,
+            flags: CacheFlags::new().with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x4F => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 32,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x00),
+            ..Default::default()
+        }),
+        0x50 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 64,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x00),
+            ..Default::default()
+        }),
+        0x51 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 128,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x00),
+            ..Default::default()
+        }),
+        0x52 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 256,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x00),
+            ..Default::default()
+        }),
+        0x55 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 256,
+            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0x56 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            level: CacheLevel::L0,
+            size: 16,
+            flags: CacheFlags::new().with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x57 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            level: CacheLevel::L0,
+            size: 16,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x59 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            level: CacheLevel::L0,
+            size: 16,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0x5A => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 32,
+            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x5B => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 64,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0x5C => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 128,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0x5D => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 256,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0x61 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 48,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        // 0x63 -> two different entries simultaneously, handled in parent function
+        0x64 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 512,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0x6A => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            level: CacheLevel::L0,
+            size: 64,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x08),
+            ..Default::default()
+        }),
+        0x6B => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 256,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x08),
+            ..Default::default()
+        }),
+        0x6C => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 128,
+            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x08),
+            ..Default::default()
+        }),
+        0x6D => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 16,
+            flags: CacheFlags::new().with_pages_1g(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0x76 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 8,
+            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0xA0 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 32,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0xFF),
+            ..Default::default()
+        }),
+        0xB0 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 128,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        // 0xB1 -> two entries, special case. handled in parent function
+        0xB2 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 64,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0xB3 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 128,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0xB4 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            level: CacheLevel::L1,
+            size: 256,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0xB5 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 64,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x08),
+            ..Default::default()
+        }),
+        0xB6 => Some(CacheDescription {
+            cachetype: CacheType::CodeTLB,
+            size: 128,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x08),
+            ..Default::default()
+        }),
+        0xBA => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            level: CacheLevel::L1,
+            size: 64,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0xC0 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 8,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0xC1 => Some(CacheDescription {
+            cachetype: CacheType::SharedTLB,
+            level: CacheLevel::L2,
+            size: 1024,
+            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true),
+            associativity: CacheAssociativity::from_identifier(0x08),
+            ..Default::default()
+        }),
+        0xC2 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 16,
+            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        // 0xC3 -> two entries. special case handled by parent function.
+        0xC4 => Some(CacheDescription {
+            cachetype: CacheType::DataTLB,
+            size: 32,
+            flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
+        0xCA => Some(CacheDescription {
+            cachetype: CacheType::SharedTLB,
+            level: CacheLevel::L2,
+            size: 512,
+            flags: CacheFlags::new().with_pages_4k(true),
+            associativity: CacheAssociativity::from_identifier(0x04),
+            ..Default::default()
+        }),
         _ => None,
+    }
+}
+
+fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<CacheType>) {
+    // Handle the weird special cases that don't map to a single
+    // cache type.
+    match descriptor {
+        0x63 => {
+            if filter.contains(&CacheType::DataTLB) {
+                let mut entries = CacheVec::new();
+                entries.0.push(CacheDescription {
+                    cachetype: CacheType::DataTLB,
+                    size: 32,
+                    flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
+                    associativity: CacheAssociativity::from_identifier(0x04),
+                    ..Default::default()
+                });
+                entries.0.push(CacheDescription {
+                    cachetype: CacheType::DataTLB,
+                    size: 4,
+                    flags: CacheFlags::new().with_pages_1g(true),
+                    associativity: CacheAssociativity::from_identifier(0x04),
+                    ..Default::default()
+                });
+                debug!("lookup_descriptors() found {:?}", entries);
+                out.0.append(&mut entries.0);
+            }
+        }
+        0xB1 => {
+            if filter.contains(&CacheType::CodeTLB) {
+                let mut entries = CacheVec::new();
+                entries.0.push(CacheDescription {
+                    cachetype: CacheType::CodeTLB,
+                    size: 8,
+                    flags: CacheFlags::new().with_pages_2m(true),
+                    associativity: CacheAssociativity::from_identifier(0x04),
+                    ..Default::default()
+                });
+                entries.0.push(CacheDescription {
+                    cachetype: CacheType::CodeTLB,
+                    size: 4,
+                    flags: CacheFlags::new().with_pages_4m(true),
+                    associativity: CacheAssociativity::from_identifier(0x04),
+                    ..Default::default()
+                });
+                debug!("lookup_descriptors() found {:?}", entries);
+                out.0.append(&mut entries.0);
+            }
+        }
+        0xC3 => {
+            if filter.contains(&CacheType::SharedTLB) {
+                let mut entries = CacheVec::new();
+                entries.0.push(CacheDescription {
+                    cachetype: CacheType::SharedTLB,
+                    level: CacheLevel::L2,
+                    size: 1536,
+                    flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true),
+                    associativity: CacheAssociativity::from_identifier(0x06),
+                    ..Default::default()
+                });
+                entries.0.push(CacheDescription {
+                    cachetype: CacheType::SharedTLB,
+                    level: CacheLevel::L2,
+                    size: 16,
+                    flags: CacheFlags::new().with_pages_1g(true),
+                    associativity: CacheAssociativity::from_identifier(0x04),
+                    ..Default::default()
+                });
+                debug!("lookup_descriptors() found {:?}", entries);
+                out.0.append(&mut entries.0);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn lookup_descriptor_internal(descriptor: u8) -> Option<CacheDescription> {
+    let mut found: Option<CacheDescription> = None;
+    #[cfg(feature = "legacy-cache-descriptors")]
+    if found.is_none() {
+        found = lookup_cache_internal(descriptor);
+    }
+    #[cfg(feature = "legacy-tlb-descriptors")]
+    if found.is_none() {
+        found = lookup_tlb_internal(descriptor);
+    }
+    found
+}
+
+pub fn lookup_descriptors(out: &mut CacheVec, descriptors: Vec<u8>, filter: &Vec<CacheType>)
+{
+    for descriptor in descriptors.iter() {
+        if *descriptor == 0x00 {
+            // null cache descriptor, not worth logging
+            continue;
+        }
+        if let Some(desc) = lookup_descriptor_internal(*descriptor) {
+            if filter.contains(&desc.cachetype) {
+                debug!("lookup_descriptors() found {:?}", desc);
+                out.0.push(desc);
+            }
+        } else {
+            let mut entries = CacheVec::new();
+            lookup_descriptor_fallback(*descriptor, &mut entries, filter);
+            if entries.0.len() > 0 {
+                debug!("lookup_descriptors() found {:?}", entries);
+                out.0.append(&mut entries.0);
+            } else {
+                debug!("lookup_descriptors() unknown cache descriptor {:0>2x}", *descriptor);
+            }
+        }
     }
 }

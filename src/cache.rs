@@ -6,10 +6,8 @@ use std::cmp::Ordering;
 use std::fmt;
 use textwrap::indent;
 
-#[cfg(feature = "legacy-cache-descriptors")]
-use crate::internal::cache_descriptors::lookup_cache_descriptor;
-
 use crate::cpuid::{Processor, RegisterName, System, VendorMask};
+use crate::internal::cache_descriptors::lookup_descriptors;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
@@ -1092,7 +1090,6 @@ fn walk_intel_dat(system: &System, cpu: &Processor, out: &mut CacheVec) -> bool 
     retval
 }
 
-#[cfg(feature = "legacy-cache-descriptors")]
 fn walk_intel_legacy_cache(_system: &System, cpu: &Processor, out: &mut CacheVec, filter: &Vec<CacheType>) {
     if let Some(raw) = cpu.get_subleaf(0x0000_0002, 0) {
         let mut bytes: Vec<u8> = vec![];
@@ -1102,100 +1099,12 @@ fn walk_intel_legacy_cache(_system: &System, cpu: &Processor, out: &mut CacheVec
         bytes.extend_from_slice(&raw.output.edx.to_le_bytes());
         bytes.sort_unstable();
         bytes.dedup();
-        for descriptor in bytes.iter() {
-            if *descriptor == 0x00 {
-                // null cache descriptor, not worth logging
-                continue;
-            }
-            if let Some(desc) = lookup_cache_descriptor(*descriptor) {
-                if filter.contains(&desc.cachetype) {
-                    debug!("walk_intel_legacy_cache() found {:?}", desc);
-                    out.0.push(desc);
-                }
-            } else {
-                // Handle the weird special cases that don't map to a single
-                // cache type.
-                match descriptor {
-                    0x63 => {
-                        if filter.contains(&CacheType::DataTLB) {
-                            let mut entries = CacheVec::new();
-                            entries.0.push(CacheDescription {
-                                cachetype: CacheType::DataTLB,
-                                size: 32,
-                                flags: CacheFlags::new().with_pages_2m(true).with_pages_4m(true),
-                                associativity: CacheAssociativity::from_identifier(0x04),
-                                ..Default::default()
-                            });
-                            entries.0.push(CacheDescription {
-                                cachetype: CacheType::DataTLB,
-                                size: 4,
-                                flags: CacheFlags::new().with_pages_1g(true),
-                                associativity: CacheAssociativity::from_identifier(0x04),
-                                ..Default::default()
-                            });
-                            debug!("walk_intel_legacy_cache() found {:?}", entries);
-                            out.0.append(&mut entries.0);
-                        }
-                    }
-                    0xB1 => {
-                        if filter.contains(&CacheType::CodeTLB) {
-                            let mut entries = CacheVec::new();
-                            entries.0.push(CacheDescription {
-                                cachetype: CacheType::CodeTLB,
-                                size: 8,
-                                flags: CacheFlags::new().with_pages_2m(true),
-                                associativity: CacheAssociativity::from_identifier(0x04),
-                                ..Default::default()
-                            });
-                            entries.0.push(CacheDescription {
-                                cachetype: CacheType::CodeTLB,
-                                size: 4,
-                                flags: CacheFlags::new().with_pages_4m(true),
-                                associativity: CacheAssociativity::from_identifier(0x04),
-                                ..Default::default()
-                            });
-                            debug!("walk_intel_legacy_cache() found {:?}", entries);
-                            out.0.append(&mut entries.0);
-                        }
-                    }
-                    0xC3 => {
-                        if filter.contains(&CacheType::SharedTLB) {
-                            let mut entries = CacheVec::new();
-                            entries.0.push(CacheDescription {
-                                cachetype: CacheType::SharedTLB,
-                                level: CacheLevel::L2,
-                                size: 1536,
-                                flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true),
-                                associativity: CacheAssociativity::from_identifier(0x06),
-                                ..Default::default()
-                            });
-                            entries.0.push(CacheDescription {
-                                cachetype: CacheType::SharedTLB,
-                                level: CacheLevel::L2,
-                                size: 16,
-                                flags: CacheFlags::new().with_pages_1g(true),
-                                associativity: CacheAssociativity::from_identifier(0x04),
-                                ..Default::default()
-                            });
-                            debug!("walk_intel_legacy_cache() found {:?}", entries);
-                            out.0.append(&mut entries.0);
-                        }
-                    }
-                    _ => {
-                        debug!(
-                            "walk_intel_legacy_cache() found unknown cache descriptor {:0>2x}",
-                            descriptor
-                        );
-                    }
-                }
-            }
-        }
+        lookup_descriptors(out, bytes, filter);
     }
 }
 
 fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dcp(system, cpu, out) {
-        #[cfg(feature = "legacy-cache-descriptors")]
         {
             let cache_types: Vec<CacheType> = vec![
                 CacheType::Code,
@@ -1210,7 +1119,6 @@ fn walk_intel_cache(system: &System, cpu: &Processor, out: &mut CacheVec) {
 
 fn walk_intel_tlb(system: &System, cpu: &Processor, out: &mut CacheVec) {
     if !walk_intel_dat(system, cpu, out) {
-        #[cfg(feature = "legacy-cache-descriptors")]
         {
             let cache_types: Vec<CacheType> = vec![
                 CacheType::CodeTLB,

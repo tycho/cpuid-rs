@@ -5,9 +5,10 @@ authors = ["Steven Noonan <steven@uplinklabs.net>"]
 edition = "2018"
 
 [features]
-default = ["legacy-cache-descriptors", "build-binaries"]
+default = ["legacy-cache-descriptors", "legacy-tlb-descriptors", "build-binaries"]
 build-binaries = ["getopts", "env_logger"]
 legacy-cache-descriptors = []
+legacy-tlb-descriptors = []
 
 [[bin]]
 name = "dump"
