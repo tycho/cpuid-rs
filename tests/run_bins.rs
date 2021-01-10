@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports)]
+
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*;
 use std::fs::read_to_string;
@@ -12,6 +14,7 @@ fn dump_path(name: &str) -> String {
 }
 
 #[test]
+#[cfg(feature = "build-binaries")]
 fn dump() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("dump")?;
     cmd.assert().success();
@@ -19,6 +22,7 @@ fn dump() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+#[cfg(feature = "build-binaries")]
 fn decode() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("decode")?;
     cmd.assert().success();
@@ -26,6 +30,7 @@ fn decode() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+#[cfg(feature = "build-binaries")]
 fn decode_on_missing_dump_file() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("decode")?;
     cmd.arg("-f").arg("bogus-file-path").assert().failure();
@@ -33,6 +38,7 @@ fn decode_on_missing_dump_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+#[cfg(feature = "build-binaries")]
 fn decode_on_existing_dump() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("decode")?;
     cmd.arg("-f")
@@ -45,6 +51,7 @@ fn decode_on_existing_dump() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+#[cfg(feature = "build-binaries")]
 fn dump_generates_identical_dump() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("dump")?;
     let path = dump_path("GenuineIntel/GenuineIntel00006F6_Merom_CPUID.txt");
