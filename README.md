@@ -15,8 +15,10 @@ The project is currently has three components:
 - `decode` binary, which prints human-readable decoding of the more
   interesting features exposed in CPUID
 - `dump` binary, which can create text-based dump files of all known CPUID
-  leaves on the local system. Dumps can be imported with the library or with
-  the `decode` binary using the `-f` argument.
+  leaves on the local system.
+
+Dumps can be imported with the library via `cpuid::System::from_file`, or with
+the `dump`/`decode` binaries using the `-f` argument.
 
 Building
 --------
