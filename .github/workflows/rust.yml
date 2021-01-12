@@ -38,6 +38,8 @@ jobs:
         rustup default ${{ matrix.rust }}
     - name: Test (no default features)
       run: cargo test --no-fail-fast --tests --verbose --no-default-features
+    - name: Test (legacy TLBs)
+      run: cargo test --no-fail-fast --tests --verbose --no-default-features --features="legacy-tlb-descriptors,build-binaries"
     - name: Test (default features)
       run: cargo test --no-fail-fast --tests --verbose
 

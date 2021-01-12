@@ -1032,6 +1032,7 @@ fn lookup_tlb_internal(descriptor: u8) -> Option<CacheDescription> {
 fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<CacheType>) {
     // Handle the weird special cases that don't map to a single
     // cache type.
+    #[cfg(feature = "legacy-tlb-descriptors")]
     match descriptor {
         0x63 => {
             if filter.contains(&CacheType::DataTLB) {
