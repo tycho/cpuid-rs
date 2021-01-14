@@ -188,7 +188,9 @@ fn describe_topology_cpu(state: &System, cpu: &Processor) -> Option<(TopologyPro
     }
 
     x2apic.socket.shift = x2apic.socket.mask.trailing_zeros() as u8;
-    x2apic.core.shift = x2apic.core.mask.trailing_zeros() as u8;
+    if x2apic.core.mask != 0 {
+        x2apic.core.shift = x2apic.core.mask.trailing_zeros() as u8;
+    }
     if x2apic.thread.mask != 0 {
         x2apic.thread.shift = x2apic.thread.mask.trailing_zeros() as u8;
     }
