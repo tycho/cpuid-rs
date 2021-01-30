@@ -144,6 +144,10 @@ pub(crate) fn describe_features(cpu: &Processor, vendor_mask: VendorMask) -> Fea
                         // (in debug)
                         register &= !mask;
                         let feature = Feature::from_detection(feature_leaf, feature_spec, bit as u8);
+                        debug!(
+                            "Leaf {:08x}:{:02x}:{:?} bit {} detected {}",
+                            feature_leaf.leaf.eax, feature_leaf.leaf.ecx, feature_leaf.register, bit, feature
+                        );
                         output.0.push(feature);
                     }
                 }
