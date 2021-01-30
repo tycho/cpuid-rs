@@ -13,8 +13,9 @@ fn dump_path(name: &str) -> String {
 #[test]
 fn import_dump_cyrix() {
     {
-        let import =
-            System::from_file(&dump_path("CyrixInstead/CyrixInstead0000520_6x86_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("CyrixInstead/CyrixInstead0000520_6x86_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::CYRIX);
@@ -22,7 +23,9 @@ fn import_dump_cyrix() {
         assert_eq!(import.features.0.len(), 3);
     }
     {
-        let import = System::from_file(&dump_path("CyrixInstead/CyrixInstead0000601_MII_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("CyrixInstead/CyrixInstead0000601_MII_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::CYRIX);
@@ -34,8 +37,9 @@ fn import_dump_cyrix() {
 #[test]
 fn import_dump_transmeta() {
     {
-        let import =
-            System::from_file(&dump_path("GenuineTMx86/GenuineTMx860000543_Crusoe_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("GenuineTMx86/GenuineTMx860000543_Crusoe_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::TRANSMETA);
@@ -44,8 +48,9 @@ fn import_dump_transmeta() {
         assert_eq!(import.features.0.len(), 11);
     }
     {
-        let import =
-            System::from_file(&dump_path("GenuineTMx86/GenuineTMx860000F24_Efficeon_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("GenuineTMx86/GenuineTMx860000F24_Efficeon_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::TRANSMETA);
@@ -61,8 +66,9 @@ fn import_dump_transmeta() {
 #[test]
 fn import_dump_sis() {
     {
-        let import =
-            System::from_file(&dump_path("SiS_SiS_SiS_/SiS SiS SiS 0000505_SiS550_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("SiS_SiS_SiS_/SiS SiS SiS 0000505_SiS550_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::SIS);
@@ -83,8 +89,9 @@ fn import_dump_sis() {
 #[test]
 fn import_dump_rise() {
     {
-        let import =
-            System::from_file(&dump_path("RiseRiseRise/RiseRiseRise0000580_mP6II_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("RiseRiseRise/RiseRiseRise0000580_mP6II_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::RISE);
@@ -105,8 +112,9 @@ fn import_dump_rise() {
 #[test]
 fn import_dump_virtualcpu() {
     {
-        let import =
-            System::from_file(&dump_path("Virtual_CPU_/Virtual CPU 0000F4A_Snap850_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("Virtual_CPU_/Virtual CPU 0000F4A_Snap850_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 8);
         assert_eq!(import.vendor, VendorMask::VIRTUAL_CPU);
@@ -132,8 +140,9 @@ fn import_dump_virtualcpu() {
 #[test]
 fn import_dump_hygon() {
     {
-        let import =
-            System::from_file(&dump_path("HygonGenuine/HygonGenuine0900F02_Hygon_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("HygonGenuine/HygonGenuine0900F02_Hygon_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 16);
         assert!(import.vendor.contains(VendorMask::AMD));
@@ -158,7 +167,8 @@ fn import_dump_centaur() {
         let import = System::from_file(&dump_path(
             "CentaurHauls/CentaurHauls0000663_C5A_Samuel_CPUID.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::CENTAUR);
@@ -166,8 +176,9 @@ fn import_dump_centaur() {
         assert_eq!(import.features.0.len(), 9);
     }
     {
-        let import =
-            System::from_file(&dump_path("CentaurHauls/CentaurHauls000067A_C5C_Ezra_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("CentaurHauls/CentaurHauls000067A_C5C_Ezra_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::CENTAUR);
@@ -178,7 +189,8 @@ fn import_dump_centaur() {
         let import = System::from_file(&dump_path(
             "CentaurHauls/CentaurHauls00006FE_CNR_Isaiah_CPUID3.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 4);
         assert_eq!(import.vendor, VendorMask::CENTAUR);
@@ -217,7 +229,9 @@ fn import_dump_centaur() {
 #[test]
 fn import_dump_amd() {
     {
-        let import = System::from_file(&dump_path("AuthenticAMD/AuthenticAMD0000500_K5_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("AuthenticAMD/AuthenticAMD0000500_K5_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::AMD);
@@ -225,7 +239,9 @@ fn import_dump_amd() {
         assert_eq!(import.features.0.len(), 9);
     }
     {
-        let import = System::from_file(&dump_path("AuthenticAMD/AuthenticAMD0000570_K6_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("AuthenticAMD/AuthenticAMD0000570_K6_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::AMD);
@@ -236,7 +252,8 @@ fn import_dump_amd() {
         let import = System::from_file(&dump_path(
             "AuthenticAMD/AuthenticAMD0000644_K7_Thunderbird_CPUID.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::AMD);
@@ -291,8 +308,9 @@ fn import_dump_amd() {
         }
     }
     {
-        let import =
-            System::from_file(&dump_path("AuthenticAMD/AuthenticAMD0830F10_K17_Rome_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("AuthenticAMD/AuthenticAMD0830F10_K17_Rome_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 256);
         assert_eq!(import.caches.0.len(), 14);
@@ -320,7 +338,9 @@ fn import_dump_amd() {
 #[test]
 fn import_dump_intel() {
     {
-        let import = System::from_file(&dump_path("GenuineIntel/GenuineIntel0000480_486_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("GenuineIntel/GenuineIntel0000480_486_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -337,7 +357,9 @@ fn import_dump_intel() {
         );
     }
     {
-        let import = System::from_file(&dump_path("GenuineIntel/GenuineIntel0000517_P5_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("GenuineIntel/GenuineIntel0000517_P5_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -349,7 +371,8 @@ fn import_dump_intel() {
         let import = System::from_file(&dump_path(
             "GenuineIntel/GenuineIntel0000633_P2_Klamath_CPUID.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -369,7 +392,8 @@ fn import_dump_intel() {
         let import = System::from_file(&dump_path(
             "GenuineIntel/GenuineIntel0000683_P3_Coppermine_CPUID.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 2);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -395,8 +419,9 @@ fn import_dump_intel() {
         // TODO: Topology for multi-socket/multi-core without x2APIC?
     }
     {
-        let import =
-            System::from_file(&dump_path("GenuineIntel/GenuineIntel0000695_PM_Banias_CPUID.txt")).unwrap();
+        let import = System::from_file(&dump_path("GenuineIntel/GenuineIntel0000695_PM_Banias_CPUID.txt"))
+            .unwrap()
+            .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -411,7 +436,8 @@ fn import_dump_intel() {
         let import = System::from_file(&dump_path(
             "GenuineIntel/GenuineIntel0000F0A_P4_Willamette_CPUID.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 1);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -426,7 +452,8 @@ fn import_dump_intel() {
         let import = System::from_file(&dump_path(
             "GenuineIntel/GenuineIntel00106A2_Nehalem-EP_CPUID_2.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 16);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -457,7 +484,8 @@ fn import_dump_intel() {
         let import = System::from_file(&dump_path(
             "GenuineIntel/GenuineIntel00806C1_TigerLake_CPUID3.txt",
         ))
-        .unwrap();
+        .unwrap()
+        .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 8);
         assert_eq!(import.vendor, VendorMask::INTEL);
@@ -472,7 +500,7 @@ fn import_dump_intel() {
 
 #[test]
 fn import_dump_localsystem() {
-    let import = System::from_local();
+    let import = System::from_local().with_decoded();
     #[cfg(not(target_os = "macos"))]
     assert_eq!(import.cpu_count, import.cpus.len());
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
