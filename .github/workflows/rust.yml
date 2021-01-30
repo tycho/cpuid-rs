@@ -46,10 +46,14 @@ jobs:
       run: |
         cargo build
         target/debug/dump
+      env:
+        RUST_LOG: debug
     - name: Run (decode)
       run: |
         cargo build
         target/debug/decode
+      env:
+        RUST_LOG: debug
 
   rustfmt:
     name: Rustfmt
