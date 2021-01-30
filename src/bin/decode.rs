@@ -37,7 +37,8 @@ fn main() {
     let system = match matches.opt_str("file") {
         Some(filename) => System::from_file(&filename).unwrap(),
         _ => System::from_local(),
-    };
+    }
+    .with_decoded();
 
     println!("{: >16}: {:?}", "Vendor(s)", system.vendor);
     println!("{: >16}: {}", "Processor Name", system.name_string);

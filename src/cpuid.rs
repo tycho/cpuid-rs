@@ -412,7 +412,6 @@ impl Processor {
     pub fn from_local() -> Processor {
         let mut processor: Processor = Processor::new();
         walk_bases(&mut processor.leaves);
-        processor.fill();
         processor
     }
 
@@ -478,7 +477,7 @@ impl Processor {
         &self.topology_decoded
     }
 
-    fn fill(&mut self) {
+    pub fn decode(&mut self) {
         self.fill_vendor();
         self.fill_signature();
     }
@@ -621,7 +620,6 @@ impl System {
         affinity::set_thread_affinity(old_affinity).unwrap();
 
         system.cpu_count = num_cpus::get();
-        system.fill();
 
         system
     }
@@ -634,7 +632,6 @@ impl System {
         debug!("collecting leaves for one CPU");
         system.cpus.push(processor);
         system.cpu_count = num_cpus::get();
-        system.fill();
         system
     }
 
@@ -666,7 +663,6 @@ impl System {
                 })
             } else if let Ok(sc_index) = scan_fmt!(&line, "CPU {}:", i32) {
                 if cpu_index >= 0 {
-                    processor.fill();
                     processor.index = cpu_index as u32;
                     system.cpus.push(processor);
                     processor = Processor::new();
@@ -676,19 +672,32 @@ impl System {
         }
 
         if cpu_index >= 0 {
-            processor.fill();
             processor.index = cpu_index as u32;
             system.cpus.push(processor);
         }
 
         system.cpu_count = system.cpus.len();
-        system.fill();
 
         Ok(system)
     }
 
-    fn fill(&mut self) {
+    pub fn with_decoded(mut self) -> Self {
+        self.decode();
+        self
+    }
+
+    pub fn decode(&mut self) {
         // Order is important. Feature/cache decoding depends a lot on the vendor string.
+        for processor in self.cpus.iter_mut() {
+            processor.decode();
+        }
+
+        // We make an assumption that all the processors have identical features and other
+        // properties, so we should ensure that each logical CPU has the same signature value.
+        for processor in self.cpus.iter() {
+            assert_eq!(processor.signature, self.cpus[0].signature);
+        }
+
         self.fill_vendor();
         self.fill_processor_name();
         self.fill_caches();
