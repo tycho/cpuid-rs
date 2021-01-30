@@ -157,10 +157,10 @@ pub static FEATURES_0000_0006_EAX: [FeatureSpec; 40] = [
 ];
 
 pub static FEATURES_0000_0006_ECX: [FeatureSpec; 40] = [
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::ANY_CPU,  shortname: "", name: "Hardware-coordination feedback capability, IA32_APERF and IA32_MPERF MSRs", },
+    FeatureSpec { bit: 0,  vendor_mask: VendorMask::ANY_CPU,  shortname: "EffFreq", name: "Hardware-coordination feedback capability, IA32_APERF and IA32_MPERF MSRs", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 3,  vendor_mask: VendorMask::ANY_CPU,  shortname: "", name: "Performance-energy bias preference", },
+    FeatureSpec { bit: 3,  vendor_mask: VendorMask::ANY_CPU,  shortname: "EnergyPerfBias", name: "Performance-energy bias preference", },
     FeatureSpec { bit: 4,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 5,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 6,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
