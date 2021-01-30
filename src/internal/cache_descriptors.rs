@@ -1051,7 +1051,7 @@ fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<C
                     associativity: CacheAssociativity::from_identifier(0x04),
                     ..Default::default()
                 });
-                debug!("lookup_descriptors() found {:?}", entries);
+                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
                 out.0.append(&mut entries.0);
             }
         }
@@ -1072,7 +1072,7 @@ fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<C
                     associativity: CacheAssociativity::from_identifier(0x04),
                     ..Default::default()
                 });
-                debug!("lookup_descriptors() found {:?}", entries);
+                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
                 out.0.append(&mut entries.0);
             }
         }
@@ -1095,7 +1095,7 @@ fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<C
                     associativity: CacheAssociativity::from_identifier(0x04),
                     ..Default::default()
                 });
-                debug!("lookup_descriptors() found {:?}", entries);
+                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
                 out.0.append(&mut entries.0);
             }
         }
@@ -1125,14 +1125,14 @@ pub fn lookup_descriptors(out: &mut CacheVec, descriptors: Vec<u8>, filter: &Vec
         }
         if let Some(desc) = lookup_descriptor_internal(*descriptor) {
             if filter.contains(&desc.cachetype) {
-                debug!("lookup_descriptors() found {:?}", desc);
+                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, desc);
                 out.0.push(desc);
             }
         } else {
             let mut entries = CacheVec::new();
             lookup_descriptor_fallback(*descriptor, &mut entries, filter);
             if entries.0.len() > 0 {
-                debug!("lookup_descriptors() found {:?}", entries);
+                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
                 out.0.append(&mut entries.0);
             } else {
                 debug!("lookup_descriptors() unknown cache descriptor {:0>2x}", *descriptor);
