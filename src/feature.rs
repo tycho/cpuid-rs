@@ -153,10 +153,15 @@ pub(crate) fn describe_features(cpu: &Processor, vendor_mask: VendorMask) -> Fea
                 }
             }
             if register != 0 {
-                debug!(
-                    "Leaf {:08x}:{:02x}:{:?} unaccounted for bits: {:08x}",
-                    feature_leaf.leaf.eax, feature_leaf.leaf.ecx, feature_leaf.register, register
-                );
+                for bit in 0..31 {
+                    let mask = 1 << bit;
+                    if (register & mask) != 0 {
+                        debug!(
+                            "Leaf {:08x}:{:02x}:{:?} unaccounted for bit {}",
+                            feature_leaf.leaf.eax, feature_leaf.leaf.ecx, feature_leaf.register, bit
+                        );
+                    }
+                }
             }
         }
     }
