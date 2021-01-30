@@ -42,6 +42,14 @@ jobs:
       run: cargo test --no-fail-fast --tests --verbose --no-default-features --features="legacy-tlb-descriptors,build-binaries"
     - name: Test (default features)
       run: cargo test --no-fail-fast --tests --verbose
+    - name: Run (dump)
+      run: |
+        cargo build
+        target/debug/dump
+    - name: Run (decode)
+      run: |
+        cargo build
+        target/debug/decode
 
   rustfmt:
     name: Rustfmt
