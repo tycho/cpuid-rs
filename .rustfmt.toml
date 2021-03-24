@@ -1,6 +1,5 @@
 # vim: set syntax=toml:
 
-required_version = "1.4.32"
 edition = "2018"
 version = "Two"
 ignore = ["src/internal/**"]
