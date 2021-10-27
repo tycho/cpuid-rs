@@ -791,7 +791,7 @@ pub static FEATURES_8000_000A_EDX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 20, vendor_mask: VendorMask::AMD,      shortname: "GuesSpecCtl", name: "SPEC_CTRL virtualization", },
     FeatureSpec { bit: 21, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 22, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 23, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
+    FeatureSpec { bit: 23, vendor_mask: VendorMask::AMD,      shortname: "HostMCE", name: "Host MCE override", },
     FeatureSpec { bit: 24, vendor_mask: VendorMask::AMD,      shortname: "TlbiCtl", name: "INVLPGB/TLBSYNC hypervisor enable", },
     FeatureSpec { bit: 25, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 26, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
