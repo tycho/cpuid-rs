@@ -229,13 +229,13 @@ impl Ord for CacheDescription {
         let mut ord: Ordering = Ordering::Equal;
 
         if ord == Ordering::Equal {
-            // Put caches with most instances first
-            ord = self.instances.cmp(&other.instances).reverse();
+            // Put caches before TLBs
+            ord = self.cachetype.is_tlb().cmp(&other.cachetype.is_tlb());
         }
 
         if ord == Ordering::Equal {
-            // Put caches before TLBs
-            ord = self.cachetype.is_tlb().cmp(&other.cachetype.is_tlb());
+            // Put caches with most instances first
+            ord = self.instances.cmp(&other.instances).reverse();
         }
 
         if ord == Ordering::Equal {
