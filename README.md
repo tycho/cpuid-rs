@@ -67,6 +67,10 @@ including:
 
 Future Work
 -----------
+* Implement support for Alder Lake-like architectures which have mixed feature
+  flags depending on the CPU index. Would need to move the feature and cache
+  vectors from System -> Processor for this, most likely. I'm going to wait
+  until I have an Alder Lake system to test this on, though.
 * Implement more CPUID leaves in a library-friendly way. I don't want the
   interface to become clunky, disorganized, or filled with redundant
   information.
