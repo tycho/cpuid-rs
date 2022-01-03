@@ -117,7 +117,8 @@ fn import_dump_virtualcpu() {
             .with_decoded();
         assert_eq!(import.cpu_count, import.cpus.len());
         assert_eq!(import.cpu_count, 8);
-        assert_eq!(import.vendor, VendorMask::VIRTUAL_CPU);
+        assert_eq!((import.vendor & VendorMask::VIRTUAL_CPU), VendorMask::VIRTUAL_CPU);
+        assert_eq!((import.vendor & VendorMask::INTEL), VendorMask::INTEL);
         assert_eq!(import.name_string, "Virtual CPU @ 2.74GHz");
         #[cfg(all(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors"))]
         assert_eq!(import.caches.0.len(), 6);
@@ -125,7 +126,7 @@ fn import_dump_virtualcpu() {
         assert_eq!(import.caches.0.len(), 2);
         #[cfg(not(any(feature = "legacy-cache-descriptors", feature = "legacy-tlb-descriptors")))]
         assert_eq!(import.caches.0.len(), 0);
-        assert_eq!(import.features.0.len(), 17);
+        assert_eq!(import.features.0.len(), 18);
         assert_eq!(
             import.cpus[0].signature,
             Signature {

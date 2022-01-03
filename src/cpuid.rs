@@ -143,7 +143,7 @@ impl VendorMask {
             "HygonGenuine" => VendorMask::HYGON,
             "SiS SiS SiS " => VendorMask::SIS,
             "RiseRiseRise" => VendorMask::RISE,
-            "Virtual CPU " => VendorMask::VIRTUAL_CPU,
+            "Virtual CPU " => VendorMask::VIRTUAL_CPU | VendorMask::INTEL,
 
             "Microsoft Hv" => VendorMask::HYPERV,
             "KVMKVMKVM" => VendorMask::KVM,
