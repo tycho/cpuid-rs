@@ -4,7 +4,7 @@ pub struct FeatureLeaf {
     pub leaf: LeafID,
     pub vendor_mask: VendorMask,
     pub register: RegisterName,
-    pub bits: &'static [FeatureSpec; 40],
+    pub bits: &'static [FeatureSpec],
 }
 
 pub struct FeatureSpec {
@@ -14,7 +14,7 @@ pub struct FeatureSpec {
     pub name: &'static str,
 }
 
-pub static FEATURES_0000_0001_EDX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0001_EDX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::ANY_CPU,  shortname: "FPU", name: "x87 FPU on chip", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::ANY_CPU,  shortname: "VME", name: "Virtual-8086 Mode Enhancement", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::ANY_CPU,  shortname: "DE", name: "Debugging Extensions", },
@@ -47,21 +47,9 @@ pub static FEATURES_0000_0001_EDX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::ANY_CPU,  shortname: "TM", name: "Thermal Monitor", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::ANY_CPU,  shortname: "PBE", name: "Pending Break Enable", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0001_ECX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0001_ECX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::ANY_CPU,  shortname: "SSE3", name: "SSE3 instructions", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::ANY_CPU,  shortname: "PCLMULQDQ", name: "PCLMULQDQ instruction", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::ANY_CPU,  shortname: "DTES64", name: "64-bit DS area", },
@@ -94,22 +82,10 @@ pub static FEATURES_0000_0001_ECX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::ANY_CPU,  shortname: "F16C", name: "16-bit floating-point conversion instructions", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::ANY_CPU,  shortname: "RDRAND", name: "RDRAND instruction", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::ANY_CPU,  shortname: "RAZ", name: "Hypervisor", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
 // Thermal and Power Management Feature Flags (0000_0006)
-pub static FEATURES_0000_0006_EAX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0006_EAX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::ANY_CPU,  shortname: "", name: "Digital temperature sensor", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::ANY_CPU,  shortname: "", name: "Intel Turbo Boost Technology", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::ANY_CPU,  shortname: "ARAT", name: "Always running APIC timer", },
@@ -142,21 +118,9 @@ pub static FEATURES_0000_0006_EAX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::ANY_CPU,  shortname: "", name: "IP payloads are LIP", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0006_ECX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0006_ECX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::ANY_CPU,  shortname: "EffFreq", name: "Hardware-coordination feedback capability, IA32_APERF and IA32_MPERF MSRs", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
@@ -189,21 +153,9 @@ pub static FEATURES_0000_0006_ECX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0007_0_EBX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0007_0_EBX: [FeatureSpec; 33] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::INTELAMD, shortname: "FSGSBASE", name: "FSGSBASE instructions", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::INTEL,    shortname: "TSC_ADJUST", name: "IA32_TSC_ADJUST MSR is supported", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::INTEL,    shortname: "SGX", name: "Software Guard Extensions", },
@@ -237,20 +189,9 @@ pub static FEATURES_0000_0007_0_EBX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::INTELAMD, shortname: "SHA", name: "SHA-1/SHA-256 instructions", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::INTEL,    shortname: "AVX512BW", name: "AVX512 byte/word instructions", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::INTEL,    shortname: "AVX512VL", name: "AVX512 vector length instructions", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0007_0_ECX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0007_0_ECX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::INTEL,    shortname: "PREFETCHWT1", name: "PREFETCHWT1 instruction", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::INTEL,    shortname: "AVX512_VBMI", name: "AVX512 vector byte manipulation instructions", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::INTELAMD, shortname: "UMIP", name: "User Mode Instruction Prevention", },
@@ -283,21 +224,9 @@ pub static FEATURES_0000_0007_0_ECX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::INTEL,    shortname: "ENQCMD", name: "Enqueue Stores", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::INTEL,    shortname: "SGX_LC", name: "SGX Launch Configuration", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::INTEL,    shortname: "PKS", name: "Protection keys for supervisor-mode pages", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0007_0_EDX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0007_0_EDX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::INTEL,    shortname: "AVX512_4VNNIW", name: "AVX512 Neural Network Instructions", },
@@ -330,21 +259,9 @@ pub static FEATURES_0000_0007_0_EDX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::INTEL,    shortname: "", name: "IA32_ARCH_CAPABILITIES MSR support", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::INTEL,    shortname: "", name: "IA32_CORE_CAPABILITIES MSR support", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::INTEL,    shortname: "SSBD", name: "Speculative Store Bypass Disable", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0007_1_EAX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0007_1_EAX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
@@ -377,21 +294,9 @@ pub static FEATURES_0000_0007_1_EAX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0014_0_EBX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0014_0_EBX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::INTEL,   shortname: "", name: "CR3 filtering", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::INTEL,   shortname: "", name: "Configurable PSB, Cycle-Accurate Mode", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::INTEL,   shortname: "", name: "Filtering preserved across warm reset", },
@@ -424,21 +329,9 @@ pub static FEATURES_0000_0014_0_EBX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN, shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN, shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN, shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_0000_0014_0_ECX: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0014_0_ECX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::INTEL,   shortname: "", name: "ToPA output scheme", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::INTEL,   shortname: "", name: "ToPA tables hold multiple output entries", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::INTEL,   shortname: "", name: "Single-range output scheme", },
@@ -471,21 +364,9 @@ pub static FEATURES_0000_0014_0_ECX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN, shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN, shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::INTEL,   shortname: "", name: "IP payloads are LIP", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_4000_0001_EAX_KVM: [FeatureSpec; 40] = [
+pub static FEATURES_4000_0001_EAX_KVM: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::KVM,      shortname: "", name: "Clocksource", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::KVM,      shortname: "", name: "NOP IO Delay", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::KVM,      shortname: "", name: "MMU Op", },
@@ -518,21 +399,9 @@ pub static FEATURES_4000_0001_EAX_KVM: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_0001_EDX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_0001_EDX: [FeatureSpec; 33] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::AMD,      shortname: "FPU", name: "x87 FPU on chip", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,      shortname: "VME", name: "Virtual-8086 Mode Enhancement", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,      shortname: "DE", name: "Debugging Extensions", },
@@ -566,20 +435,9 @@ pub static FEATURES_8000_0001_EDX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::ANY_CPU,  shortname: "LM", name: "Long Mode, EM64T", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "3DNowExt", name: "AMD extensions to 3DNow! instructions", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::AMD,      shortname: "3DNow", name: "3DNow! instructions", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_0001_ECX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_0001_ECX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::ANY_CPU,  shortname: "LahfSahf", name: "LAHF/SAHF instruction support in 64-bit mode", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,      shortname: "CmpLegacy", name: "Core multi-processing legacy mode", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,      shortname: "SVM", name: "Secure Virtual Machine", },
@@ -612,21 +470,9 @@ pub static FEATURES_8000_0001_ECX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::AMD,      shortname: "MwaitExtended", name: "MONITORX/MWAITX instructions", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::AMD,      shortname: "AdMskExtn", name: "address mask extension for instruction breakpoint", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_0007_EBX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_0007_EBX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::AMD,  shortname: "McaOverflowRecov", name: "MCA overflow recovery support", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,  shortname: "SUCCOR", name: "Software uncorrectable error containment and recovery", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,  shortname: "HWA", name: "Hardware assert", },
@@ -659,21 +505,9 @@ pub static FEATURES_8000_0007_EBX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_0007_EDX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_0007_EDX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::AMD,      shortname: "TS", name: "Temperature sensor", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,      shortname: "FID", name: "Frequency ID control", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,      shortname: "VID", name: "Voltage ID control", },
@@ -706,21 +540,9 @@ pub static FEATURES_8000_0007_EDX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_0008_EBX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_0008_EBX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::AMD,      shortname: "CLZERO", name: "Clear zero instruction", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,      shortname: "InstRetCntMsr", name: "Instructions retired count support", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,      shortname: "RstrFpErrPtrs", name: "XSAVE always saves/restores error pointers", },
@@ -753,21 +575,9 @@ pub static FEATURES_8000_0008_EBX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_000A_EDX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_000A_EDX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::AMD,      shortname: "NP", name: "Nested paging", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,      shortname: "LbrVit", name: "LBR virtualization", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,      shortname: "SVML", name: "SVM lock", },
@@ -800,21 +610,9 @@ pub static FEATURES_8000_000A_EDX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_001A_EAX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_001A_EAX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::AMD,      shortname: "FP128", name: "128-bit SSE full-width pipelines", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,      shortname: "MOVU", name: "Efficient MOVU SSE instructions", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,      shortname: "FP256", name: "256-bit AVX full-width pipelines", },
@@ -847,21 +645,9 @@ pub static FEATURES_8000_001A_EAX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_8000_001B_EAX: [FeatureSpec; 40] = [
+pub static FEATURES_8000_001B_EAX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::AMD,      shortname: "IBSFFV", name: "IBS feature flags valid", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::AMD,      shortname: "FetchSam", name: "IBS fetch sampling", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::AMD,      shortname: "OpSam", name: "IBS execution sampling", },
@@ -894,21 +680,9 @@ pub static FEATURES_8000_001B_EAX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
-pub static FEATURES_C000_0001_EDX: [FeatureSpec; 40] = [
+pub static FEATURES_C000_0001_EDX: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::CENTAUR,  shortname: "", name: "Alternate Instruction Set available", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::CENTAUR,  shortname: "", name: "Alternate Instruction Set enabled", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::CENTAUR,  shortname: "", name: "Random Number Generator available", },
@@ -941,22 +715,10 @@ pub static FEATURES_C000_0001_EDX: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 
 /*
-pub static FEATURES_0000_0000_REG: [FeatureSpec; 40] = [
+pub static FEATURES_0000_0000_REG: [FeatureSpec; 32] = [
     FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 1,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 2,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
@@ -989,18 +751,6 @@ pub static FEATURES_0000_0000_REG: [FeatureSpec; 40] = [
     FeatureSpec { bit: 29, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 30, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
     FeatureSpec { bit: 31, vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-
-    // Slack fill. Some bits have multiple uses depending on vendor, so we have
-    // to fill the end of each vector with a bunch of junk to keep the arrays
-    // all the same size.
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
-    FeatureSpec { bit: 0,  vendor_mask: VendorMask::UNKNOWN,  shortname: "", name: "", },
 ];
 */
 
