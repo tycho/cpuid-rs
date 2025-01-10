@@ -50,6 +50,7 @@ pub enum RegisterName {
 bitflags! {
     /// Bitmask for Vendor IDs, used to identify both physical CPU vendors and
     /// hypervisor vendors.
+    #[derive(Copy, Clone)]
     pub struct VendorMask: u32 {
         /// This mask contains no vendor flags.
         const UNKNOWN = 0x0000_0000;
@@ -127,6 +128,12 @@ bitflags! {
 
         /// Vendor flag for FreeBSD's byve hypervisor
         const BHYVE = 0x0040_0000;
+    }
+}
+
+impl fmt::Debug for VendorMask {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        bitflags::parser::to_writer(self, f)
     }
 }
 
