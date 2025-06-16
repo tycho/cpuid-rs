@@ -3,7 +3,7 @@ use std::fmt;
 use textwrap::indent;
 
 use crate::cpuid::{LeafID, Processor, RegisterName, VendorMask};
-use crate::internal::feature_flags::{FeatureLeaf, FeatureSpec, FEATURE_LEAVES};
+use crate::internal::feature_flags::{FEATURE_LEAVES, FeatureLeaf, FeatureSpec};
 
 #[derive(Debug, Clone)]
 /// Describes a discovered CPU feature.

@@ -740,7 +740,7 @@ fn lookup_cache_internal(descriptor: u8) -> Option<CacheDescription> {
             associativity: CacheAssociativity::from_identifier(0x18),
             ..Default::default()
         }),
-        _ => None
+        _ => None,
     }
 }
 
@@ -800,21 +800,30 @@ fn lookup_tlb_internal(descriptor: u8) -> Option<CacheDescription> {
         0x50 => Some(CacheDescription {
             cachetype: CacheType::CodeTLB,
             size: 64,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
+            flags: CacheFlags::new()
+                .with_pages_4k(true)
+                .with_pages_2m(true)
+                .with_pages_4m(true),
             associativity: CacheAssociativity::from_identifier(0x00),
             ..Default::default()
         }),
         0x51 => Some(CacheDescription {
             cachetype: CacheType::CodeTLB,
             size: 128,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
+            flags: CacheFlags::new()
+                .with_pages_4k(true)
+                .with_pages_2m(true)
+                .with_pages_4m(true),
             associativity: CacheAssociativity::from_identifier(0x00),
             ..Default::default()
         }),
         0x52 => Some(CacheDescription {
             cachetype: CacheType::CodeTLB,
             size: 256,
-            flags: CacheFlags::new().with_pages_4k(true).with_pages_2m(true).with_pages_4m(true),
+            flags: CacheFlags::new()
+                .with_pages_4k(true)
+                .with_pages_2m(true)
+                .with_pages_4m(true),
             associativity: CacheAssociativity::from_identifier(0x00),
             ..Default::default()
         }),
@@ -1051,7 +1060,10 @@ fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<C
                     associativity: CacheAssociativity::from_identifier(0x04),
                     ..Default::default()
                 });
-                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
+                debug!(
+                    "lookup_descriptors() descriptor {:0>2x}: {:?}",
+                    descriptor, entries
+                );
                 out.0.append(&mut entries.0);
             }
         }
@@ -1072,7 +1084,10 @@ fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<C
                     associativity: CacheAssociativity::from_identifier(0x04),
                     ..Default::default()
                 });
-                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
+                debug!(
+                    "lookup_descriptors() descriptor {:0>2x}: {:?}",
+                    descriptor, entries
+                );
                 out.0.append(&mut entries.0);
             }
         }
@@ -1095,7 +1110,10 @@ fn lookup_descriptor_fallback(descriptor: u8, out: &mut CacheVec, filter: &Vec<C
                     associativity: CacheAssociativity::from_identifier(0x04),
                     ..Default::default()
                 });
-                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
+                debug!(
+                    "lookup_descriptors() descriptor {:0>2x}: {:?}",
+                    descriptor, entries
+                );
                 out.0.append(&mut entries.0);
             }
         }
@@ -1116,8 +1134,7 @@ fn lookup_descriptor_internal(descriptor: u8) -> Option<CacheDescription> {
     found
 }
 
-pub fn lookup_descriptors(out: &mut CacheVec, descriptors: Vec<u8>, filter: &Vec<CacheType>)
-{
+pub fn lookup_descriptors(out: &mut CacheVec, descriptors: Vec<u8>, filter: &Vec<CacheType>) {
     for descriptor in descriptors.iter() {
         if *descriptor == 0x00 {
             // null cache descriptor, not worth logging
@@ -1132,10 +1149,16 @@ pub fn lookup_descriptors(out: &mut CacheVec, descriptors: Vec<u8>, filter: &Vec
             let mut entries = CacheVec::new();
             lookup_descriptor_fallback(*descriptor, &mut entries, filter);
             if entries.0.len() > 0 {
-                debug!("lookup_descriptors() descriptor {:0>2x}: {:?}", descriptor, entries);
+                debug!(
+                    "lookup_descriptors() descriptor {:0>2x}: {:?}",
+                    descriptor, entries
+                );
                 out.0.append(&mut entries.0);
             } else {
-                debug!("lookup_descriptors() unknown cache descriptor {:0>2x}", *descriptor);
+                debug!(
+                    "lookup_descriptors() unknown cache descriptor {:0>2x}",
+                    *descriptor
+                );
             }
         }
     }

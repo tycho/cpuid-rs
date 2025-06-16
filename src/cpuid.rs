@@ -6,11 +6,11 @@ use modular_bitfield::prelude::*;
 use scan_fmt::*;
 use std::fmt;
 use std::fs::File;
-use std::io::{prelude::*, BufReader};
+use std::io::{BufReader, prelude::*};
 
-use crate::cache::{describe_caches, CacheVec};
-use crate::feature::{describe_features, FeatureVec};
-use crate::topology::{describe_topology, TopologyID, TopologyInferred, TopologyProps};
+use crate::cache::{CacheVec, describe_caches};
+use crate::feature::{FeatureVec, describe_features};
+use crate::topology::{TopologyID, TopologyInferred, TopologyProps, describe_topology};
 
 #[derive(Debug, Clone, PartialEq)]
 /// Input `eax` and `ecx` values for a single CPUID invocation.
