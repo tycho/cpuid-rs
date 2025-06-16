@@ -50,7 +50,7 @@ pub enum RegisterName {
 bitflags! {
     /// Bitmask for Vendor IDs, used to identify both physical CPU vendors and
     /// hypervisor vendors.
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, PartialEq)]
     pub struct VendorMask: u32 {
         /// This mask contains no vendor flags.
         const UNKNOWN = 0x0000_0000;

@@ -37,21 +37,24 @@ jobs:
         rustup update ${{ matrix.rust }} --no-self-update
         rustup default ${{ matrix.rust }}
     - name: Test (no default features)
-      run: cargo test --no-fail-fast --tests --verbose --no-default-features
+      run: |
+        cargo test --no-fail-fast --tests --verbose --no-default-features
     - name: Test (legacy TLBs)
-      run: cargo test --no-fail-fast --tests --verbose --no-default-features --features="legacy-tlb-descriptors,build-binaries"
+      run: |
+        cargo test --no-fail-fast --tests --verbose --no-default-features --features="legacy-tlb-descriptors,build-binaries"
     - name: Test (default features)
-      run: cargo test --no-fail-fast --tests --verbose
+      run: |
+        cargo test --no-fail-fast --tests --verbose
     - name: Run (dump)
       run: |
         cargo build
-        target/debug/dump
+        target/debug/cpuid-dump
       env:
         RUST_LOG: debug
     - name: Run (decode)
       run: |
         cargo build
-        target/debug/decode
+        target/debug/cpuid-decode
       env:
         RUST_LOG: debug
 
@@ -65,4 +68,6 @@ jobs:
         rustup update nightly --no-self-update
         rustup default nightly
         rustup component add rustfmt
-    - run: cargo fmt -- --check
+    - name: Run rustfmt
+      run: |
+        cargo fmt -- --check
