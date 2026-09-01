@@ -1,7 +1,7 @@
 # vim: set syntax=toml:
 
 edition = "2018"
-version = "Two"
+style_edition = "2024"
 ignore = ["src/internal/**"]
 max_width = 110
 newline_style = "Unix"
