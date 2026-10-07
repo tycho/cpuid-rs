@@ -12,49 +12,55 @@ jobs:
           - build: stable
             os: ubuntu-latest
             rust: stable
+            target: x86_64-unknown-linux-gnu
           - build: beta
             os: ubuntu-latest
             rust: beta
+            target: x86_64-unknown-linux-gnu
           - build: nightly
             os: ubuntu-latest
             rust: nightly
+            target: x86_64-unknown-linux-gnu
           - build: macos
             os: macos-latest
             rust: stable
+            target: x86_64-apple-darwin
           - build: win32
             os: windows-latest
-            rust: stable-i686
+            rust: stable
+            target: i686-pc-windows-msvc
           - build: win64
             os: windows-latest
-            rust: stable-x86_64
+            rust: stable
+            target: x86_64-pc-windows-msvc
           - build: mingw
             os: windows-latest
-            rust: stable-x86_64-gnu
+            rust: stable
+            target: x86_64-pc-windows-gnu
     steps:
     - uses: actions/checkout@master
     - name: Install Rust (rustup)
       run: |
+        rustup target add ${{ matrix.target }}
         rustup update ${{ matrix.rust }} --no-self-update
         rustup default ${{ matrix.rust }}
     - name: Test (no default features)
       run: |
-        cargo test --no-fail-fast --tests --verbose --no-default-features
+        cargo test --no-fail-fast --tests --verbose --no-default-features ${{ matrix.target }}
     - name: Test (legacy TLBs)
       run: |
-        cargo test --no-fail-fast --tests --verbose --no-default-features --features="legacy-tlb-descriptors,build-binaries"
+        cargo test --no-fail-fast --tests --verbose --no-default-features --features="legacy-tlb-descriptors,build-binaries" ${{ matrix.target }}
     - name: Test (default features)
       run: |
-        cargo test --no-fail-fast --tests --verbose
+        cargo test --no-fail-fast --tests --verbose --target ${{ matrix.target }}
     - name: Run (dump)
       run: |
-        cargo build
-        target/debug/cpuid-dump
+        cargo run --target ${{ matrix.target }} --bin cpuid-dump
       env:
         RUST_LOG: debug
     - name: Run (decode)
       run: |
-        cargo build
-        target/debug/cpuid-decode
+        cargo run --target ${{ matrix.target }} --bin cpuid-decode
       env:
         RUST_LOG: debug
 
